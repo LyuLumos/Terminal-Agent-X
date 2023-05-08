@@ -10,5 +10,5 @@ setup(
         ]
     },
     author='LyuLumos',
-    install_requires=['requests'],
+    install_requires=[],
 )
