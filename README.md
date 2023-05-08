@@ -52,4 +52,4 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 ## License
 
-MIT
+[GNU General Public License v3.0](LICENSE)
