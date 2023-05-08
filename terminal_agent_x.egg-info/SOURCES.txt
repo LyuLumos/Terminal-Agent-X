@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+terminal_agent_x/tax.py
+terminal_agent_x.egg-info/PKG-INFO
+terminal_agent_x.egg-info/SOURCES.txt
+terminal_agent_x.egg-info/dependency_links.txt
+terminal_agent_x.egg-info/entry_points.txt
+terminal_agent_x.egg-info/requires.txt
+terminal_agent_x.egg-info/top_level.txt

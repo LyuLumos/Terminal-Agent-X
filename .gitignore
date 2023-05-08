@@ -1,0 +1,5 @@
+.idea/*
+venv/*
+run.sh
+info.py
+test.py
