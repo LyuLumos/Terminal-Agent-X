@@ -1,10 +1,12 @@
 # Terminal-Agent-X
 
-[EN](README.md) / [中文](README_cn.md)
+[EN](README.md) / [中文](https://github.com/LyuLumos/Terminal-Agent-X/blob/main/README_cn.md)
 
 ## Install
 
-TBD.
+```bash
+pip install terminal-agent-x
+```
 
 ## Config
 

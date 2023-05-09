@@ -2,7 +2,9 @@
 
 ## 安装
 
-TBD.
+```bash
+pip install terminal-agent-x
+```
 
 ## 配置
 
