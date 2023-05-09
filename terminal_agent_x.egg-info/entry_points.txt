@@ -1,2 +1,0 @@
-[console_scripts]
-tax = terminal_agent_x.tax:main
