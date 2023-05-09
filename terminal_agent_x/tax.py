@@ -6,7 +6,6 @@ import re
 # # ATTENTION: Python requests is very slow. Use curl instead.
 # import requests
 # def get_model_response(OpenAI_KEY, model, prompt):
-#     # url = 'https://api.openai.com/v1/chat/completions'
 #     url = 'https://api.lyulumos.space/v1/chat/completions'
 #     headers = {
 #         'Authorization': f'Bearer {OpenAI_KEY}',
@@ -31,6 +30,7 @@ import re
 #         assert False, f'Error: {e}'
 #     return str(res)
 
+
 def fetch_code(openai_key, model, prompt):
     command = "curl -s"
     url = "https://api.lyulumos.space/v1/chat/completions"
@@ -49,9 +49,10 @@ def fetch_code(openai_key, model, prompt):
     # print(command)
 
     try:
-        res = json.loads(os.popen(command).read())['choices'][0]['message']['content']
+        res = json.loads(os.popen(command).read())[
+            'choices'][0]['message']['content']
     except KeyError:
-        assert False, f'This is most likely due to poor internet. Please retry.'
+        assert False, 'This is most likely due to poor internet. Please retry.'
     return str(res)
 
 
@@ -60,11 +61,12 @@ def find_code(text):
     pattern = r"```(.*?)```"
     match = re.search(pattern, text, re.DOTALL)
     if match:
-        return delete_prefix(match.group(0)) # with ``` pairs
+        return delete_prefix(match.group(0))  # with ``` pairs
     else:
         return None
         # assert False, f'Error: No code found in text. Please retry.'
     # return None
+
 
 def delete_prefix(text):
     # text: ```python\nprint('Hello, world!')\n``` or ```\nprint('Hello, world!')\n```
@@ -72,13 +74,15 @@ def delete_prefix(text):
     return s_new.strip('`').strip()
 
 
-
 def main():
     parser = argparse.ArgumentParser(description='Description of your program')
     parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
-    parser.add_argument('--openai_key', type=str, help='Your key for OpenAI, only for one-time request')
-    parser.add_argument('--model', type=str, default='gpt-3.5-turbo', help='Model name')
-    parser.add_argument('--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
+    parser.add_argument('--openai_key', type=str,
+                        help='Your key for OpenAI, only for one-time request')
+    parser.add_argument('--model', type=str,
+                        default='gpt-3.5-turbo', help='Model name')
+    parser.add_argument(
+        '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)
@@ -90,9 +94,8 @@ def main():
     # res = get_model_response(openai_key, args.model, prompt)
     res = fetch_code(openai_key, args.model, prompt)
 
-
     if args.file:
-        with open(args.file, 'w') as f:
+        with open(args.file, 'w', encoding='utf-8') as f:
             f.write(res)
         f.close()
     else:
@@ -103,7 +106,7 @@ def main():
             print(first_code + '\n')
             # only run for single code
             if first_code and len(first_code.split('\n')) == 1:
-                answer = input('Do you want to excute the command? (y/n)  ')
+                answer = input('Do you want to execute the command? (y/n)  ')
                 if answer == 'y' or answer == 'Y' or answer == 'yes' or answer == 'Yes' or answer == 'YES':
                     os.system(first_code)
 

@@ -1,6 +1,7 @@
 LICENSE
 README.md
-setup.py
+pyproject.toml
+terminal_agent_x/__init__.py
 terminal_agent_x/tax.py
 terminal_agent_x.egg-info/PKG-INFO
 terminal_agent_x.egg-info/SOURCES.txt

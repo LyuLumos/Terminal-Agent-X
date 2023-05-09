@@ -46,7 +46,7 @@ Current version does not support Windows Powershell, or run on Windows systems e
 
 You can see a directive after the generated command that says
 ```
-Do you want to excute the command? (y/n)
+Do you want to execute the command? (y/n)
 ```
 Please execute it or not at your own discretion. I am not responsible for the consequences of generated commands.
 

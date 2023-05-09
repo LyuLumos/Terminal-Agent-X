@@ -44,6 +44,6 @@ tax 用Python写一个计算斐波那契数列的程序
 
 你可能会在生成的命令后面看到一行命令
 ```
-Do you want to excute the command? (y/n)
+Do you want to execute the command? (y/n)
 ```
 请自行决定执行与否。我对生成的命令的后果不负责任。
