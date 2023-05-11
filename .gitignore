@@ -5,3 +5,4 @@ info.py
 terminal_agent_x.egg-info/*
 dist/
 build/
+**/__pycache__
