@@ -37,12 +37,13 @@ tax write a python code for fibonacci
 ```
 
 Use `tax -h` to get more information.
+```bash
+usage: tax.py [-h] [--openai_key OPENAI_KEY] [--model MODEL] [--file FILE] [--url URL] [--show_all] prompt [prompt ...]
+```
 
 ## Support
 
 I have tested on Windows 10/11(cmd) and Ubuntu 22.04, it should work on other platforms.
-
-Current version does not support Windows Powershell, or run on Windows systems early than Windows 10. For these users, you can install `curl on Windows` to use this tool.
 
 ## Attention
 
@@ -55,3 +56,22 @@ Please execute it or not at your own discretion. I am not responsible for the co
 ## License
 
 [GNU General Public License v3.0](LICENSE)
+
+## Development Logs
+
+<details>
+<summary>0.1.0</summary>
+
+- Implement basic functions
+- Support for Windows cmd and Linux shell
+- Add `--file` option for saving the response to a file
+</details>
+
+<details>
+<summary>0.1.1</summary>
+
+- Add `--show_all` option for showing all contents of the response.
+- Add `--url` option for users not under GFW.
+- support for Windows Powershell
+</details>
+

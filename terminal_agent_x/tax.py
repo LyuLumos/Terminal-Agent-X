@@ -42,7 +42,7 @@ def fetch_code(openai_key, model, prompt):
             command += f' "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
     else:  # Linux
         command += f" --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
-    print(command)
+    # print(command)
 
     try:
         res = json.loads(os.popen(command).read())[
@@ -57,43 +57,13 @@ def find_code(text):
     match = re.search(pattern, text, re.DOTALL)
     if match:
         return delete_prefix(match.group(0))  # with ``` pairs
-    else:
-        return None
-        # assert False, f'Error: No code found in text. Please retry.'
-    # return None
+    return None
 
 
 def delete_prefix(text):
     # text: ```python\nprint('Hello, world!')\n``` or ```\nprint('Hello, world!')\n```
     s_new = re.sub(r'```[\w-]*\n', '```', text)
     return s_new.strip('`').strip()
-
-# # ATTENTION: Python requests is very slow. Use curl instead.
-# import requests
-# def get_model_response(OpenAI_KEY, model, prompt):
-#     url = 'https://api.lyulumos.space/v1/chat/completions'
-#     headers = {
-#         'Authorization': f'Bearer {OpenAI_KEY}',
-#         'Content-Type': 'application/json',
-#     }
-#     json_data = {
-#         'model': 'gpt-3.5-turbo',
-#         'messages': [
-#             {
-#                 'role': 'user',
-#                 'content': '{}'.format(prompt),
-#             },
-#         ],
-#     }
-#     # print(json_data)
-#     response = requests.post(url, headers=headers, json=json_data)
-#     # print(response.text)
-#     # {"id":"chatcmpl-7DcBBzkbUMUZTxbzigCiajz4u5PCE","object":"chat.completion","created":1683479381,"model":"gpt-3.5-turbo-0301","usage":{"prompt_tokens":10,"completion_tokens":10,"total_tokens":20},"choices":[{"message":{"role":"assistant","content":"Hello there! How can I assist you today?"},"finish_reason":"stop","index":0}]}
-#     try:
-#         res = json.loads(response.text)['choices'][0]['message']['content']
-#     except Exception as e:
-#         assert False, f'Error: {e}'
-#     return str(res)
 
 
 def main():
@@ -102,11 +72,12 @@ def main():
     parser.add_argument('--openai_key', type=str,
                         help='Your key for OpenAI, only for one-time request')
     parser.add_argument('--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name')
+                        default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
     parser.add_argument(
         '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
     parser.add_argument('--url', type=str, default='https://api.lyulumos.space/v1/chat/completions',
                         help='URL for API request. When your network environment is NOT under GFW, you can use OpenAI API directly.')
+    parser.add_argument('--show_all', action='store_true', help='Show all contents in the response')
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)
@@ -122,6 +93,8 @@ def main():
         with open(args.file, 'w', encoding='utf-8') as f:
             f.write(res)
         f.close()
+    elif args.show_all:
+        print(res)
     else:
         first_code = find_code(res)
         if not first_code:
