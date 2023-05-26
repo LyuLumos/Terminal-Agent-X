@@ -38,7 +38,7 @@ tax write a python code for fibonacci
 
 Use `tax -h` to get more information.
 ```bash
-usage: tax.py [-h] [--openai_key OPENAI_KEY] [--model MODEL] [--file FILE] [--url URL] [--show_all] prompt [prompt ...]
+usage: tax.py [-h] [--openai_key OPENAI_KEY] [--model MODEL] [--file FILE] [--url URL] [--default_url] [--show_all] prompt [prompt ...]
 ```
 
 ## Support

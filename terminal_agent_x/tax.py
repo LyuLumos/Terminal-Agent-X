@@ -21,7 +21,7 @@ def run_command_with_timeout(command, timeout):
                          stderr=subprocess.PIPE, shell=True)
     try:
         stdout, stderr = p.communicate(timeout=timeout)
-        return stdout.decode('utf-8')
+        return stdout.decode('utf-8', 'ignore')
     except subprocess.TimeoutExpired:
         p.terminate()
         if os.name == 'nt':
@@ -42,9 +42,8 @@ def kill_process_tree(pid):
         pass
 
 
-def fetch_code(openai_key, model, prompt):
-    command = "curl -s"
-    url = "https://api.lyulumos.space/v1/chat/completions"
+def fetch_code(openai_key, model, prompt, default_url=False):
+    url = "https://api.lyulumos.space/v1/chat/completions" if not default_url else "https://api.openai.com/v1/chat/completions"
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -57,22 +56,19 @@ def fetch_code(openai_key, model, prompt):
 
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
-            webrequest_pwsh = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers '
-            f'@{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | '
-            'Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty '
-            'choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object '
-            '-ExpandProperty content'
-            print(webrequest_pwsh)
+            command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
+            print(command)
         else:  # Windows cmd
             headers = [h.replace('"', '\\"') for h in headers]
             data = data.replace('"', '\\"')
-            command += f' "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
+            command = f'curl -s "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
     else:  # Linux
-        command += f" --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
+        command = f"curl -s --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
     # print(command)
 
     try:
-        res = run_command_with_timeout(command, 90)
+        res = run_command_with_timeout(command, 60)
+        # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
         assert False, 'This is most likely due to poor internet. Please retry.'
@@ -102,7 +98,8 @@ def main():
     parser.add_argument(
         '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
     parser.add_argument('--url', type=str, default='https://api.lyulumos.space/v1/chat/completions',
-                        help='URL for API request. When your network environment is NOT under GFW, you can use OpenAI API directly.')
+                        help='URL for API request which can be accessd under GFW. When your network environment is NOT under GFW, you can use OpenAI API directly.')
+    parser.add_argument('--default_url', action='store_true', help='Use default OpenAI API URL for request.')
     parser.add_argument('--show_all', action='store_true',
                         help='Show all contents in the response')
     args = parser.parse_args()
@@ -114,7 +111,7 @@ def main():
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
 
     # res = get_model_response(openai_key, args.model, prompt)
-    res = fetch_code(openai_key, args.model, prompt)
+    res = fetch_code(openai_key, args.model, prompt, args.default_url)
 
     if args.file:
         with open(args.file, 'w', encoding='utf-8') as f:
