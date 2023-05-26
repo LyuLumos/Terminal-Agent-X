@@ -21,7 +21,7 @@ def run_command_with_timeout(command, timeout):
                          stderr=subprocess.PIPE, shell=True)
     try:
         stdout, stderr = p.communicate(timeout=timeout)
-        return stdout.decode('utf-8', 'ignore')
+        return stdout.decode('utf-8', 'ignore'), stderr.decode('utf-8', 'ignore')
     except subprocess.TimeoutExpired:
         p.terminate()
         if os.name == 'nt':
@@ -56,8 +56,9 @@ def fetch_code(openai_key, model, prompt, default_url=False):
 
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
-            command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
-            print(command)
+            wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
+            print(f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
+            return ''
         else:  # Windows cmd
             headers = [h.replace('"', '\\"') for h in headers]
             data = data.replace('"', '\\"')
@@ -67,7 +68,7 @@ def fetch_code(openai_key, model, prompt, default_url=False):
     # print(command)
 
     try:
-        res = run_command_with_timeout(command, 60)
+        res, err = run_command_with_timeout(command, 60)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
