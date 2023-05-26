@@ -1,3 +1,5 @@
+import subprocess
+import signal
 import os
 import argparse
 import psutil
@@ -12,6 +14,32 @@ def check_terminal():
         return 'powershell'
     elif parent_process_name in ['cmd', 'cmd.exe']:
         return 'cmd'
+
+
+def run_command_with_timeout(command, timeout):
+    p = subprocess.Popen(command, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, shell=True)
+    try:
+        stdout, stderr = p.communicate(timeout=timeout)
+        return stdout.decode('utf-8')
+    except subprocess.TimeoutExpired:
+        p.terminate()
+        if os.name == 'nt':
+            kill_process_tree(p.pid)
+        else:
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+        raise RuntimeError(f"Command timed out after {timeout} seconds")
+
+
+def kill_process_tree(pid):
+    try:
+        parent = psutil.Process(pid)
+        children = parent.children(recursive=True)
+        for child in children:
+            child.kill()
+        parent.kill()
+    except psutil.NoSuchProcess:
+        pass
 
 
 def fetch_code(openai_key, model, prompt):
@@ -35,7 +63,6 @@ def fetch_code(openai_key, model, prompt):
             'choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object '
             '-ExpandProperty content'
             print(webrequest_pwsh)
-
         else:  # Windows cmd
             headers = [h.replace('"', '\\"') for h in headers]
             data = data.replace('"', '\\"')
@@ -45,11 +72,10 @@ def fetch_code(openai_key, model, prompt):
     # print(command)
 
     try:
-        res = json.loads(os.popen(command).read())[
-            'choices'][0]['message']['content']
+        res = run_command_with_timeout(command, 90)
+        return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
         assert False, 'This is most likely due to poor internet. Please retry.'
-    return str(res)
 
 
 def find_code(text):
@@ -62,7 +88,7 @@ def find_code(text):
 
 def delete_prefix(text):
     # text: ```python\nprint('Hello, world!')\n``` or ```\nprint('Hello, world!')\n```
-    s_new = re.sub(r'```[\w-]*\n', '```', text)
+    s_new = re.sub(r'```[\w-]*[+]*\n', '```', text)
     return s_new.strip('`').strip()
 
 
@@ -77,7 +103,8 @@ def main():
         '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
     parser.add_argument('--url', type=str, default='https://api.lyulumos.space/v1/chat/completions',
                         help='URL for API request. When your network environment is NOT under GFW, you can use OpenAI API directly.')
-    parser.add_argument('--show_all', action='store_true', help='Show all contents in the response')
+    parser.add_argument('--show_all', action='store_true',
+                        help='Show all contents in the response')
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)

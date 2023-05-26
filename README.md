@@ -72,6 +72,6 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 - Add `--show_all` option for showing all contents of the response.
 - Add `--url` option for users not under GFW.
-- support for Windows Powershell
+- Add support for Windows Powershell
 </details>
 
