@@ -1,5 +1,5 @@
-import subprocess
 import signal
+import subprocess
 import os
 import argparse
 import psutil
@@ -22,13 +22,14 @@ def run_command_with_timeout(command, timeout):
     try:
         stdout, stderr = p.communicate(timeout=timeout)
         return stdout.decode('utf-8', 'ignore'), stderr.decode('utf-8', 'ignore')
-    except subprocess.TimeoutExpired:
+    except subprocess.TimeoutExpired as timeout_e:
         p.terminate()
         if os.name == 'nt':
             kill_process_tree(p.pid)
         else:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-        raise RuntimeError(f"Command timed out after {timeout} seconds")
+        raise subprocess.TimeoutExpired(
+            p.args, timeout, output=stdout, stderr=stderr) from timeout_e
 
 
 def kill_process_tree(pid):
@@ -57,7 +58,8 @@ def fetch_code(openai_key, model, prompt, default_url=False):
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
-            print(f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
+            print(
+                f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
             return ''
         else:  # Windows cmd
             headers = [h.replace('"', '\\"') for h in headers]
@@ -100,7 +102,8 @@ def main():
         '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
     parser.add_argument('--url', type=str, default='https://api.lyulumos.space/v1/chat/completions',
                         help='URL for API request which can be accessd under GFW. When your network environment is NOT under GFW, you can use OpenAI API directly.')
-    parser.add_argument('--default_url', action='store_true', help='Use default OpenAI API URL for request.')
+    parser.add_argument('--default_url', action='store_true',
+                        help='Use default OpenAI API URL for request.')
     parser.add_argument('--show_all', action='store_true',
                         help='Show all contents in the response')
     args = parser.parse_args()
