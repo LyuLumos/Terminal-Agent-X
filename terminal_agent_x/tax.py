@@ -43,8 +43,9 @@ def kill_process_tree(pid):
         pass
 
 
-def fetch_code(openai_key, model, prompt, default_url=False):
-    url = "https://api.lyulumos.space/v1/chat/completions" if not default_url else "https://api.openai.com/v1/chat/completions"
+def fetch_code(openai_key, model, prompt, args):
+    url = "https://api.lyulumos.space/v1/chat/completions" if not args.default_url else "https://api.openai.com/v1/chat/completions"
+    url = "https://claude-api.lyulumos.space/v1/chat/completions" if args.claude else url
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -71,6 +72,7 @@ def fetch_code(openai_key, model, prompt, default_url=False):
 
     try:
         res, err = run_command_with_timeout(command, 60)
+        # print(res, err)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
@@ -104,6 +106,8 @@ def main():
                         help='URL for API request which can be accessd under GFW. When your network environment is NOT under GFW, you can use OpenAI API directly.')
     parser.add_argument('--default_url', action='store_true',
                         help='Use default OpenAI API URL for request.')
+    parser.add_argument('--claude', action='store_true',
+                        help='Use Claude API for request.')
     parser.add_argument('--show_all', action='store_true',
                         help='Show all contents in the response')
     args = parser.parse_args()
@@ -115,7 +119,7 @@ def main():
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
 
     # res = get_model_response(openai_key, args.model, prompt)
-    res = fetch_code(openai_key, args.model, prompt, args.default_url)
+    res = fetch_code(openai_key, args.model, prompt, args)
 
     if args.file:
         with open(args.file, 'w', encoding='utf-8') as f:

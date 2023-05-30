@@ -6,3 +6,4 @@ terminal_agent_x.egg-info/*
 dist/
 build/
 **/__pycache__
+info.sh
