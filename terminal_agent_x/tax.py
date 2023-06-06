@@ -83,14 +83,10 @@ def find_code(text):
     pattern = r"```(.*?)```"
     match = re.search(pattern, text, re.DOTALL)
     if match:
-        return delete_prefix(match.group(0))  # with ``` pairs
+        codes = match.group(0)
+        first_n = codes.find('\n')
+        return codes[first_n+1:-3].strip()  # without ``` pairs
     return None
-
-
-def delete_prefix(text):
-    # text: ```python\nprint('Hello, world!')\n``` or ```\nprint('Hello, world!')\n```
-    s_new = re.sub(r'```[\w-]*[+]*\n', '```', text)
-    return s_new.strip('`').strip()
 
 
 def main():
