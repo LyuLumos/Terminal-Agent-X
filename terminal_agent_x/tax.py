@@ -44,8 +44,12 @@ def kill_process_tree(pid):
 
 
 def fetch_code(openai_key, model, prompt, args):
-    url = "https://api.lyulumos.space/v1/chat/completions" if not args.default_url else "https://api.openai.com/v1/chat/completions"
-    url = "https://claude-api.lyulumos.space/v1/chat/completions" if args.claude else url
+    urls = {
+        'openai_gfw': 'https://api.lyulumos.space/v1/chat/completions',
+        'openai': 'https://api.openai.com/v1/chat/completions',
+        'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
+    }
+    url = urls[args.url] if args.url in urls else args.url
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -90,7 +94,7 @@ def find_code(text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Description of your program')
+    parser = argparse.ArgumentParser(description='Tax: A terminal agent using OpenAI/Claude API')
     parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
     parser.add_argument('--openai_key', type=str,
                         help='Your key for OpenAI, only for one-time request')
@@ -98,12 +102,8 @@ def main():
                         default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
     parser.add_argument(
         '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
-    parser.add_argument('--url', type=str, default='https://api.lyulumos.space/v1/chat/completions',
-                        help='URL for API request which can be accessd under GFW. When your network environment is NOT under GFW, you can use OpenAI API directly.')
-    parser.add_argument('--default_url', action='store_true',
-                        help='Use default OpenAI API URL for request.')
-    parser.add_argument('--claude', action='store_true',
-                        help='Use Claude API for request.')
+    parser.add_argument('--url', type=str, default='openai_gfw',
+                        help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url. The default one can be accessd under GFW.")
     parser.add_argument('--show_all', action='store_true',
                         help='Show all contents in the response')
     args = parser.parse_args()

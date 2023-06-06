@@ -38,9 +38,9 @@ tax write a python code for fibonacci
 
 Use `tax -h` to get more information.
 ```bash
-usage: tax.py [-h] [--openai_key OPENAI_KEY] [--model MODEL] [--file FILE] [--url URL] [--default_url] [--claude] [--show_all] prompt [prompt ...]
+usage: tax [-h] [--openai_key OPENAI_KEY] [--model MODEL] [--file FILE] [--url URL] [--show_all] prompt [prompt ...]
 
-Description of your program
+Tax: A terminal agent using OpenAI/Claude API
 
 positional arguments:
   prompt                Prompt
@@ -51,9 +51,7 @@ options:
                         Your key for OpenAI, only for one-time request
   --model MODEL         Model name. You can use all OpenAI models.
   --file FILE           Output file. If specified, the output will be written to this file. Tax will act like ChatGPT
-  --url URL             URL for API request which can be accessd under GFW. When your network environment is NOT under GFW, you can use OpenAI API directly.
-  --default_url         Use default OpenAI API URL for request.
-  --claude              Use Claude API for request.
+  --url URL             URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url . The default one can be accessd under GFW.
   --show_all            Show all contents in the response
 ```
 
