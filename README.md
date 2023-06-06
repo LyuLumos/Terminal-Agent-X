@@ -91,3 +91,12 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Add support for Windows Powershell
 </details>
 
+<details>
+<summary>0.1.2</summary>
+
+- [WIP]Add Anthropic Claude API Support. Thanks to [jtsang4/claude-to-chatgpt](https://github.com/jtsang4/claude-to-chatgpt).
+- Add Support for Chinese on Linux and Windows. (also add a temporary solution for VSCode Terminal on Windows).
+- Add a timeout function.
+- Fix: C++ code block prefix.
+</details>
+
