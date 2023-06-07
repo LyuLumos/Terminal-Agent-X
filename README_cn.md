@@ -1,5 +1,7 @@
 # Terminal-Agent-X
 
+[EN](README.md) / [中文](https://github.com/LyuLumos/Terminal-Agent-X/blob/main/README_cn.md) / [Wiki](https://github.com/LyuLumos/Terminal-Agent-X/wiki)
+
 ## 安装
 
 ```bash
@@ -34,13 +36,12 @@ source ~/.bashrc
 tax 用Python写一个计算斐波那契数列的程序
 ```
 
-使用`tax -h`来获得更多信息。
+使用`tax -h`来查看更多信息。
+
 
 ## 支持
 
 目前仅在 Windows 10/11(cmd) 和 Ubuntu 22.04上进行了测试，理论上也支持其他平台。
-
-目前的版本不支持在Windows Powershell运行，也不能在早于Windows 10的系统运行。对于这些用户，你可以安装 `curl on Windows` 以使用此工具。
 
 ## 注意
 

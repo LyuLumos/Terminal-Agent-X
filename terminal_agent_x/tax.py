@@ -2,9 +2,9 @@ import signal
 import subprocess
 import os
 import argparse
-import psutil
 import re
 import json
+import psutil
 
 
 def check_terminal():
@@ -12,7 +12,7 @@ def check_terminal():
     parent_process_name = psutil.Process(os.getppid()).name()
     if parent_process_name in ['pwsh', 'powershell', 'powershell.exe']:
         return 'powershell'
-    elif parent_process_name in ['cmd', 'cmd.exe']:
+    if parent_process_name in ['cmd', 'cmd.exe']:
         return 'cmd'
 
 
@@ -43,13 +43,13 @@ def kill_process_tree(pid):
         pass
 
 
-def fetch_code(openai_key, model, prompt, args):
+def fetch_code(openai_key, model, prompt, url):
     urls = {
         'openai_gfw': 'https://api.lyulumos.space/v1/chat/completions',
         'openai': 'https://api.openai.com/v1/chat/completions',
         'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
     }
-    url = urls[args.url] if args.url in urls else args.url
+    url = urls[url] if url in urls else url
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -66,21 +66,22 @@ def fetch_code(openai_key, model, prompt, args):
             print(
                 f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
             return ''
-        else:  # Windows cmd
-            headers = [h.replace('"', '\\"') for h in headers]
-            data = data.replace('"', '\\"')
-            command = f'curl -s "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
+        # Windows cmd
+        headers = [h.replace('"', '\\"') for h in headers]
+        data = data.replace('"', '\\"')
+        command = f'curl -s "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
     else:  # Linux
         command = f"curl -s --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
     # print(command)
 
     try:
         res, err = run_command_with_timeout(command, 60)
-        # print(res, err)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
         assert False, 'This is most likely due to poor internet. Please retry.'
+    except json.decoder.JSONDecodeError:
+        assert False, 'This URL may be valid or the response cannot be parsed'
 
 
 def find_code(text):
@@ -94,10 +95,11 @@ def find_code(text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Tax: A terminal agent using OpenAI/Claude API')
+    parser = argparse.ArgumentParser(
+        description='Tax: A terminal agent using OpenAI/Claude API')
     parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
-    parser.add_argument('--openai_key', type=str,
-                        help='Your key for OpenAI, only for one-time request')
+    parser.add_argument('--key', type=str,
+                        help='Your key for OpenAI//Claude, only for one-time request')
     parser.add_argument('--model', type=str,
                         default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
     parser.add_argument(
@@ -110,12 +112,12 @@ def main():
 
     prompt = ' '.join(args.prompt)
     prompt = f'{prompt}. Answer me with markdown'
-    openai_key = args.openai_key or os.environ.get('OpenAI_KEY')
-    if not openai_key:
+    key = args.key or os.environ.get('OpenAI_KEY')
+    if not key:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
 
     # res = get_model_response(openai_key, args.model, prompt)
-    res = fetch_code(openai_key, args.model, prompt, args)
+    res = fetch_code(key, args.model, prompt, args.url)
 
     if args.file:
         with open(args.file, 'w', encoding='utf-8') as f:
