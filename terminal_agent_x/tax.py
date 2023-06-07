@@ -79,9 +79,9 @@ def fetch_code(openai_key, model, prompt, url):
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
-        assert False, 'This is most likely due to poor internet. Please retry.'
+        assert False, 'This is most likely due to poor internet or invalid key. Please retry.'
     except json.decoder.JSONDecodeError:
-        assert False, 'This URL may be valid or the response cannot be parsed'
+        assert False, 'This URL may be invalid or the response cannot be parsed'
 
 
 def find_code(text):
@@ -98,16 +98,16 @@ def main():
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
     parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
-    parser.add_argument('--key', type=str,
-                        help='Your key for OpenAI//Claude, only for one-time request')
+    parser.add_argument('-k', '--key', type=str,
+                        help='Your key for OpenAI/Claude.')
     parser.add_argument('--model', type=str,
                         default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
     parser.add_argument(
-        '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT')
+        '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT.')
     parser.add_argument('--url', type=str, default='openai_gfw',
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url. The default one can be accessd under GFW.")
     parser.add_argument('--show_all', action='store_true',
-                        help='Show all contents in the response')
+                        help='Show all contents in the response.')
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)

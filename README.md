@@ -97,3 +97,10 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Fix: C++ code block prefix.
 </details>
 
+<details>
+<summary>0.1.3</summary>
+
+- Fix: code block prefix bug (tax will act maybe a little faster).
+- Modify: simplify the code.
+- Test: test for multi-process. Now you can use tax more efficiently in terminal.
+</details>
