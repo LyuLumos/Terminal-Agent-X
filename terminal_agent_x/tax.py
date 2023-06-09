@@ -76,6 +76,7 @@ def fetch_code(openai_key, model, prompt, url):
 
     try:
         res, err = run_command_with_timeout(command, 60)
+        # print(res, err)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
@@ -94,6 +95,12 @@ def find_code(text):
     return None
 
 
+def load_file(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        text = f.read()
+    return text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
@@ -102,8 +109,10 @@ def main():
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('--model', type=str,
                         default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
-    parser.add_argument(
-        '--file', type=str, help='Output file. If specified, the output will be written to this file. Tax will act like ChatGPT.')
+    parser.add_argument('-i', '--input', type=str,
+                        help='Input file. If specified, the prompt will be read from the file.')
+    parser.add_argument('-o', '--output', type=str,
+                        help='Output file. If specified, the response will be saved to the file.')
     parser.add_argument('--url', type=str, default='openai_gfw',
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url. The default one can be accessd under GFW.")
     parser.add_argument('--show_all', action='store_true',
@@ -111,7 +120,8 @@ def main():
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)
-    prompt = f'{prompt}. Answer me with markdown'
+    prompt = f'{prompt}\\n{load_file(args.input)}' if args.input else prompt
+
     key = args.key or os.environ.get('OpenAI_KEY')
     if not key:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
@@ -119,8 +129,8 @@ def main():
     # res = get_model_response(openai_key, args.model, prompt)
     res = fetch_code(key, args.model, prompt, args.url)
 
-    if args.file:
-        with open(args.file, 'w', encoding='utf-8') as f:
+    if args.output:
+        with open(args.output, 'w', encoding='utf-8') as f:
             f.write(res)
         f.close()
     elif args.show_all:
