@@ -4,10 +4,11 @@ import os
 import argparse
 import re
 import json
+from typing import Tuple
 import psutil
 
 
-def check_terminal():
+def check_terminal() -> str:
     # check the terminal type
     parent_process_name = psutil.Process(os.getppid()).name()
     if parent_process_name in ['pwsh', 'powershell', 'powershell.exe']:
@@ -16,7 +17,7 @@ def check_terminal():
         return 'cmd'
 
 
-def run_command_with_timeout(command, timeout):
+def run_command_with_timeout(command: str, timeout: int) -> Tuple[str, str]:
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True)
     try:
@@ -32,7 +33,7 @@ def run_command_with_timeout(command, timeout):
             p.args, timeout, output=stdout, stderr=stderr) from timeout_e
 
 
-def kill_process_tree(pid):
+def kill_process_tree(pid: int) -> None:
     try:
         parent = psutil.Process(pid)
         children = parent.children(recursive=True)
@@ -43,9 +44,8 @@ def kill_process_tree(pid):
         pass
 
 
-def fetch_code(openai_key, model, prompt, url):
-    url, headers, terminal_headers, data = req_info(openai_key, model, prompt, url)
-    
+def fetch_code(openai_key: str, model: str, prompt: str, url_option: str) -> str:
+    url, headers, terminal_headers, data = req_info(openai_key, model, prompt, url_option)
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
@@ -56,6 +56,7 @@ def fetch_code(openai_key, model, prompt, url):
         headers = [h.replace('"', '\\"') for h in headers]
         data = data.replace('"', '\\"')
         command = f'curl -s "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
+        command = f'{command} --ipv4' if model == 'claude' else command  # The claude API worker is not IPv6 compatible
     else:  # Linux
         command = f"curl -s --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
     # print(command)
@@ -72,7 +73,8 @@ def fetch_code(openai_key, model, prompt, url):
     except json.decoder.JSONDecodeError:
         assert False, 'This URL may be invalid or the response cannot be parsed'
 
-def req_info(openai_key, model, prompt, url_option):
+
+def req_info(openai_key: str, model: str, prompt: str, url_option: str) -> Tuple[str, str, str, str]:
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -87,6 +89,7 @@ def req_info(openai_key, model, prompt, url_option):
         'openai': 'https://api.openai.com/v1/chat/completions',
         'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
     }
+    url_option = 'claude' if model == 'claude' else url_option
     url = urls[url_option] if url_option in urls else url_option
 
     if model.lower() == 'dalle':
@@ -97,7 +100,7 @@ def req_info(openai_key, model, prompt, url_option):
     return url, headers, terminal_headers, data
 
 
-def find_code(text):
+def find_code(text: str) -> str:
     pattern = r"```(.*?)```"
     match = re.search(pattern, text, re.DOTALL)
     if match:
@@ -107,13 +110,13 @@ def find_code(text):
     return None
 
 
-def load_file(path):
+def load_file(path: str) -> str:
     with open(path, 'r', encoding='utf-8') as f:
         text = f.read()
     return text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
     parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
