@@ -44,22 +44,8 @@ def kill_process_tree(pid):
 
 
 def fetch_code(openai_key, model, prompt, url):
-    urls = {
-        'openai_gfw': 'https://api.lyulumos.space/v1/chat/completions',
-        'openai': 'https://api.openai.com/v1/chat/completions',
-        'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
-    }
-    url = urls[url] if url in urls else url
-    headers = [
-        f"Authorization: Bearer {openai_key}",
-        "Content-Type: application/json"
-    ]
-    terminal_headers = [
-        f"Authorization='Bearer {openai_key}'",
-        "'Content-Type'='application/json'"
-    ]
-    data = f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
-
+    url, headers, terminal_headers, data = req_info(openai_key, model, prompt, url)
+    
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
@@ -78,11 +64,37 @@ def fetch_code(openai_key, model, prompt, url):
         res, err = run_command_with_timeout(command, 60)
         # print(res, err)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
+        if model.lower() == 'dalle':
+            return json.loads(res)['data'][0]['url']
         return json.loads(res)['choices'][0]['message']['content']
     except KeyError:
         assert False, 'This is most likely due to poor internet or invalid key. Please retry.'
     except json.decoder.JSONDecodeError:
         assert False, 'This URL may be invalid or the response cannot be parsed'
+
+def req_info(openai_key, model, prompt, url_option):
+    headers = [
+        f"Authorization: Bearer {openai_key}",
+        "Content-Type: application/json"
+    ]
+    terminal_headers = [
+        f"Authorization='Bearer {openai_key}'",
+        "'Content-Type'='application/json'"
+    ]
+
+    urls = {
+        'openai_gfw': 'https://api.lyulumos.space/v1/chat/completions',
+        'openai': 'https://api.openai.com/v1/chat/completions',
+        'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
+    }
+    url = urls[url_option] if url_option in urls else url_option
+
+    if model.lower() == 'dalle':
+        url = 'https://api.lyulumos.space/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
+        data = f'{{"prompt": "{prompt}"}}'
+    else:
+        data = f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
+    return url, headers, terminal_headers, data
 
 
 def find_code(text):
@@ -108,7 +120,7 @@ def main():
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name. You can use all OpenAI models.')
+                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s, claude or DALLE.')
     parser.add_argument('-i', '--input', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
@@ -133,7 +145,7 @@ def main():
         with open(args.output, 'w', encoding='utf-8') as f:
             f.write(res)
         f.close()
-    elif args.show_all:
+    elif args.show_all or args.model.lower() == 'dalle':
         print(res)
     else:
         first_code = find_code(res)
