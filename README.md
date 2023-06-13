@@ -58,10 +58,6 @@ options:
   --show_all            Show all contents in the response.
 ```
 
-## Support
-
-I have tested on Windows 10/11(cmd) and Ubuntu 22.04, it should work on other platforms.
-
 ## Attention
 
 You can see a directive after the generated command that says
@@ -95,7 +91,7 @@ Please execute it or not at your own discretion. I am not responsible for the co
 <details>
 <summary>0.1.2</summary>
 
-- [WIP]Add Anthropic Claude API Support. Thanks to [jtsang4/claude-to-chatgpt](https://github.com/jtsang4/claude-to-chatgpt).
+- Add Anthropic Claude API Support. Thanks to [jtsang4/claude-to-chatgpt](https://github.com/jtsang4/claude-to-chatgpt).
 - Add Support for Chinese on Linux and Windows. (also add a temporary solution for VSCode Terminal on Windows).
 - Add a timeout function.
 - Fix: C++ code block prefix.
@@ -107,4 +103,12 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Fix: code block prefix bug (tax will act maybe a little faster).
 - Modify: simplify the code.
 - Test: test for multi-process. Now you can use tax more efficiently in terminal.
+</details>
+
+<details>
+<summary>0.1.4</summary>
+
+- Feat: Add support for reading prompt from file.
+- Feat: Add support for OpenAI DALL·E.
+- Fix: Resolve the bug of curl command on Windows platform using IPv6 address to access Claude.
 </details>
