@@ -128,8 +128,8 @@ def main() -> None:
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
                         help='Output file. If specified, the response will be saved to the file.')
-    parser.add_argument('--url', type=str, default='openai_gfw',
-                        help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url. The default one can be accessd under GFW.")
+    parser.add_argument('--url', type=str, default='openai',
+                        help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.")
     parser.add_argument('--show_all', action='store_true',
                         help='Show all contents in the response.')
     args = parser.parse_args()

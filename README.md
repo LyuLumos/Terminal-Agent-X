@@ -10,7 +10,7 @@ pip install terminal-agent-x
 
 ## Config
 
-You need to add the environment variable `OpenAI_KEY` to the path.
+You need to add the environment variable `OpenAI_KEY` to the path. Please get your `OpenAI_KEY` from [OpenAI](https://platform.openai.com/account/api-keys).
 
 ```bash
 # On Linux
@@ -25,15 +25,13 @@ source ~/.bashrc
 
 Use `python -c "import os;print(os.environ.get('OpenAI_KEY'))"` for testing.
 
-You can get your `OpenAI_KEY` from [OpenAI](https://platform.openai.com/account/api-keys).
-
 
 ## Get Started
 
-You can use the `tax <prompt>` to interact with the model, like this:
+You can use the `tax <prompt>` to interact with the model, like:
 
 ```
-tax write a python code for fibonacci
+$ tax write a python code for fibonacci
 ```
 
 Use `tax -h` to get more information.
@@ -53,8 +51,7 @@ options:
                         Input file. If specified, the prompt will be read from the file.
   -o OUTPUT, --output OUTPUT
                         Output file. If specified, the response will be saved to the file.
-  --url URL             URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url. The default one can be
-                        accessd under GFW.
+  --url URL             URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.
   --show_all            Show all contents in the response.
 ```
 
