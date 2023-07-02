@@ -12,17 +12,6 @@ pip install terminal-agent-x
 
 You need to add the environment variable `OpenAI_KEY` to the path. Please get your `OpenAI_KEY` from [OpenAI](https://platform.openai.com/account/api-keys).
 
-```bash
-# On Linux
-vim ~/.bashrc
-# add this line to the end of the file
-export OpenAI_KEY=sk-xxx
-# save and execute
-source ~/.bashrc
-
-# For Windows, you can google how to set environment variables on Windows.
-```
-
 Use `python -c "import os;print(os.environ.get('OpenAI_KEY'))"` for testing.
 
 
@@ -46,7 +35,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -k KEY, --key KEY     Your key for OpenAI/Claude.
-  --model MODEL         Model name. Choose from gpt-3.5/4s, claude or DALLE.
+  --model MODEL         Model name. Choose from gpt-3.5/4s or DALLE.
   -i INPUT, --input INPUT
                         Input file. If specified, the prompt will be read from the file.
   -o OUTPUT, --output OUTPUT
@@ -62,6 +51,8 @@ You can see a directive after the generated command that says
 Do you want to execute the command? (y/n)
 ```
 Please execute it or not at your own discretion. I am not responsible for the consequences of generated commands.
+
+Anthropic Claude API in not available since July 2023. Please use OpenAI API instead.
 
 ## License
 
@@ -108,4 +99,10 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Feat: Add support for reading prompt from file.
 - Feat: Add support for OpenAI DALL·E.
 - Fix: Resolve the bug of curl command on Windows platform using IPv6 address to access Claude.
+</details>
+
+<details>
+<summary>0.1.5</summary>
+
+- Fix: Change api to a third-party proxy. Affected by GFW's DNS domain pollution, the original proxy is temporarily unavailable.
 </details>
