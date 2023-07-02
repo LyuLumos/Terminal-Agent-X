@@ -85,15 +85,18 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str) -> Tuple
     ]
 
     urls = {
-        'openai_gfw': 'https://api.lyulumos.space/v1/chat/completions',
+        'openai_gfw': 'https://api.openai-proxy.com/v1/chat/completions',
         'openai': 'https://api.openai.com/v1/chat/completions',
-        'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
+        # 'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
     }
-    url_option = 'claude' if model == 'claude' else url_option
+    # url_option = 'claude' if model == 'claude' else url_option
+    # claude API is not accessible
+    if model == 'claude':
+        assert False, 'Claude API is not accessible now. Please use OpenAI API instead.'
     url = urls[url_option] if url_option in urls else url_option
 
     if model.lower() == 'dalle':
-        url = 'https://api.lyulumos.space/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
+        url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
         data = f'{{"prompt": "{prompt}"}}'
     else:
         data = f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
@@ -123,7 +126,7 @@ def main() -> None:
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s, claude or DALLE.')
+                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s or DALLE.')
     parser.add_argument('-i', '--input', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
