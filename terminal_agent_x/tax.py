@@ -143,7 +143,8 @@ def chat(openai_key: str, model: str, url_option: str):
         response = fetch_code(openai_key, model, json.dumps(
             conversation), url_option, True)
         print(f'Tax: {response}')
-        conversation.append({"role": "assistant", "content": response.encode('unicode-escape').decode('utf8').replace("'", "")})
+        conversation.append({"role": "assistant", "content": response.encode(
+            'unicode-escape').decode('utf8').replace("'", "")})
         # The bash command sent cannot contain single quotes, escaping has no effect. So the single quotes in the conversation will be deleted and the user will not see it.
         # print(conversation)
 
@@ -160,7 +161,7 @@ def main() -> None:
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
                         help='Output file. If specified, the response will be saved to the file.')
-    parser.add_argument('--chat', action='store_true',
+    parser.add_argument('-c', '--chat', action='store_true',
                         help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
     parser.add_argument('--url', type=str, default='openai',
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.")
@@ -176,6 +177,7 @@ def main() -> None:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
     if args.chat:
         chat(key, args.model, args.url)
+        return
 
     # res = get_model_response(openai_key, args.model, prompt)
     res = fetch_code(key, args.model, prompt, args.url, False)

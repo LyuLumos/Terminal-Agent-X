@@ -2,6 +2,15 @@
 
 [EN](README.md) / [中文](https://github.com/LyuLumos/Terminal-Agent-X/blob/main/README_cn.md) / [Wiki](https://github.com/LyuLumos/Terminal-Agent-X/wiki)
 
+
+## Features
+
+- 👻 一键安装运行
+- 🎈 体积极小，不需要任何依赖
+- 🐼 支持中英文，能够运行在Windows和Linux多类型终端上
+- 🤖 兼容OpenAI GPT-3.5/4s、DALL·E以及 Claude API，可在世界各地使用
+
+
 ## 安装
 
 ```bash
@@ -37,11 +46,6 @@ tax 用Python写一个计算斐波那契数列的程序
 ```
 
 使用`tax -h`来查看更多信息。
-
-
-## 支持
-
-目前仅在 Windows 10/11(cmd) 和 Ubuntu 22.04上进行了测试，理论上也支持其他平台。
 
 ## 注意
 
