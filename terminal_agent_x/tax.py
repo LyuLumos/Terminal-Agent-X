@@ -6,6 +6,7 @@ import re
 import json
 from typing import Tuple
 import psutil
+import datetime
 
 
 def check_terminal() -> str:
@@ -44,19 +45,21 @@ def kill_process_tree(pid: int) -> None:
         pass
 
 
-def fetch_code(openai_key: str, model: str, prompt: str, url_option: str) -> str:
-    url, headers, terminal_headers, data = req_info(openai_key, model, prompt, url_option)
+def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool) -> str:
+    url, headers, terminal_headers, data = req_info(
+        openai_key, model, prompt, url_option, chat_flag)
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
             print(
                 f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
             return ''
-        # Windows cmd
+        # Windows cmdtax
         headers = [h.replace('"', '\\"') for h in headers]
         data = data.replace('"', '\\"')
         command = f'curl -s "{url}" -H "{headers[0]}" -H "{headers[1]}" -d "{data}"'
-        command = f'{command} --ipv4' if model == 'claude' else command  # The claude API worker is not IPv6 compatible
+        # The claude API worker is not IPv6 compatible
+        command = f'{command} --ipv4' if model == 'claude' else command
     else:  # Linux
         command = f"curl -s --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
     # print(command)
@@ -74,7 +77,15 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str) -> str
         assert False, 'This URL may be invalid or the response cannot be parsed'
 
 
-def req_info(openai_key: str, model: str, prompt: str, url_option: str) -> Tuple[str, str, str, str]:
+def chat_data_wrapper(model: str, prompt: str, chat_flag: bool) -> str:
+    if chat_flag:
+        return f'{{"model": "{model}","messages":{prompt}}}'  # 组装数据的部分在函数之外完成
+    if model.lower() == 'dalle':
+        return f'{{"prompt": "{prompt}"}}'
+    return f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
+
+
+def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool) -> Tuple[str, str, str, str]:
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -97,9 +108,7 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str) -> Tuple
 
     if model.lower() == 'dalle':
         url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
-        data = f'{{"prompt": "{prompt}"}}'
-    else:
-        data = f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
+    data = chat_data_wrapper(model, prompt, chat_flag)
     return url, headers, terminal_headers, data
 
 
@@ -119,18 +128,40 @@ def load_file(path: str) -> str:
     return text.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n')
 
 
+def chat(openai_key: str, model: str, url_option: str):
+    current_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    conversation = [
+        {"role": "system", "content": f"You are ChatGPT, a large language model trained by OpenAI.\nKnowledge cutoff: 2021-09\nCurrent date: {current_date}"},
+    ]
+    # print(conversation)
+
+    while True:
+        user_input = input("> ")
+        if user_input == "exit":
+            break
+        conversation.append({"role": "user", "content": user_input})
+        response = fetch_code(openai_key, model, json.dumps(
+            conversation), url_option, True)
+        print(f'Tax: {response}')
+        conversation.append({"role": "assistant", "content": response.encode('unicode-escape').decode('utf8').replace("'", "")})
+        # The bash command sent cannot contain single quotes, escaping has no effect. So the single quotes in the conversation will be deleted and the user will not see it.
+        # print(conversation)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
-    parser.add_argument("prompt", nargs='+', type=str, help="Prompt")
+    parser.add_argument("prompt", nargs='*', type=str, help="Prompt")
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
-    parser.add_argument('--model', type=str,
+    parser.add_argument('-m', '--model', type=str,
                         default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s or DALLE.')
     parser.add_argument('-i', '--input', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
                         help='Output file. If specified, the response will be saved to the file.')
+    parser.add_argument('--chat', action='store_true',
+                        help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
     parser.add_argument('--url', type=str, default='openai',
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.")
     parser.add_argument('--show_all', action='store_true',
@@ -143,9 +174,11 @@ def main() -> None:
     key = args.key or os.environ.get('OpenAI_KEY')
     if not key:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
+    if args.chat:
+        chat(key, args.model, args.url)
 
     # res = get_model_response(openai_key, args.model, prompt)
-    res = fetch_code(key, args.model, prompt, args.url)
+    res = fetch_code(key, args.model, prompt, args.url, False)
 
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
