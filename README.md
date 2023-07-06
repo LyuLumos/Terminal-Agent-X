@@ -48,8 +48,6 @@ Do you want to execute the command? (y/n)
 ```
 Please execute it or not at your own discretion. I am not responsible for the consequences of generated commands.
 
-Anthropic Claude API in not available since July 2023. Please use OpenAI API instead.
-
 ## License
 
 [GNU General Public License v3.0](LICENSE)
@@ -92,5 +90,5 @@ Anthropic Claude API in not available since July 2023. Please use OpenAI API ins
 
 #### 0.1.5
 
-- Fix: Change api to a third-party proxy. Affected by GFW's DNS domain pollution, the original proxy is temporarily unavailable.
+- Fix: Change api to a third-party proxy. Affected by GFW's DNS domain pollution, the original proxy is temporarily unavailable. `claude-to-chatgpt` is unavailable.
 </details>

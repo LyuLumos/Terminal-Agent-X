@@ -66,15 +66,12 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
 
     try:
         res, err = run_command_with_timeout(command, 60)
-        # print(res, err)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         if model.lower() == 'dalle':
             return json.loads(res)['data'][0]['url']
         return json.loads(res)['choices'][0]['message']['content']
-    except KeyError:
-        assert False, 'This is most likely due to poor internet or invalid key. Please retry.'
-    except json.decoder.JSONDecodeError:
-        assert False, 'This URL may be invalid or the response cannot be parsed'
+    except:
+        return 'Error', res, err
 
 
 def chat_data_wrapper(model: str, prompt: str, chat_flag: bool) -> str:
@@ -98,18 +95,43 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
     urls = {
         'openai_gfw': 'https://api.openai-proxy.com/v1/chat/completions',
         'openai': 'https://api.openai.com/v1/chat/completions',
-        # 'claude': 'https://claude-api.lyulumos.space/v1/chat/completions'
     }
-    # url_option = 'claude' if model == 'claude' else url_option
-    # claude API is not accessible
-    if model == 'claude':
-        assert False, 'Claude API is not accessible now. Please use OpenAI API instead.'
+    
     url = urls[url_option] if url_option in urls else url_option
 
     if model.lower() == 'dalle':
         url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
     data = chat_data_wrapper(model, prompt, chat_flag)
     return url, headers, terminal_headers, data
+
+
+def single_claude(anthropic_api_key: str, model: str, prompt: str) -> str:
+    url = 'https://api.anthropic.com/v1/complete'
+    model = 'claude-1' if model == 'claude' else model
+    headers = [
+        "anthropic-version: 2023-06-01",
+        "content-type: application/json",
+        f"x-api-key: {anthropic_api_key}"
+    ]
+    data = f'{{"model": "{model}","prompt": "\\n\\nHuman: {prompt}\\n\\nAssistant:","max_tokens_to_sample": 256,"stream": false}}'
+    if os.name == 'nt':
+        if check_terminal() == 'powershell':
+            wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]};{terminal_headers[2]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
+            print(
+                f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
+            return ''
+        # Windows cmd
+        headers = [h.replace('"', '\\"') for h in headers]
+        data = data.replace('"', '\\"')
+        command = f'curl -s {url} -H "{headers[0]}" -H "{headers[1]}" -H "{headers[2]}" -d "{data}"'
+    else:
+        command = f"curl --request POST --url '{url}' --header '{headers[0]}' --header '{headers[1]}' --header '{headers[2]}' --data '{data}'"
+    # print(command)
+    try:
+        res, err = run_command_with_timeout(command, 60)
+        return json.loads(res)['completion']
+    except:
+        return 'Error', res, err
 
 
 def find_code(text: str) -> str:
@@ -156,16 +178,16 @@ def main() -> None:
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('-m', '--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s or DALLE.')
+                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s, Claude API or DALLE.')
     parser.add_argument('-i', '--input', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
                         help='Output file. If specified, the response will be saved to the file.')
     parser.add_argument('-c', '--chat', action='store_true',
                         help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
-    parser.add_argument('--url', type=str, default='openai',
+    parser.add_argument('-u', '--url', type=str, default='openai',
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.")
-    parser.add_argument('--show_all', action='store_true',
+    parser.add_argument('-a', '--show_all', action='store_true',
                         help='Show all contents in the response.')
     args = parser.parse_args()
 
@@ -177,6 +199,11 @@ def main() -> None:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
     if args.chat:
         chat(key, args.model, args.url)
+        return
+    
+    if args.model.lower() == 'claude' or args.url == 'claude':
+        res = single_claude(key, 'claude-1', prompt)
+        print(res)
         return
 
     # res = get_model_response(openai_key, args.model, prompt)
