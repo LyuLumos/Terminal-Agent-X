@@ -71,7 +71,7 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 #### 0.1.2
 
-- Add Anthropic Claude API Support. Thanks to [jtsang4/claude-to-chatgpt](https://github.com/jtsang4/claude-to-chatgpt).
+- Add Anthropic Claude API Support. Thanks to [jtsang4/claude-to-chatgpt](https://github.com/jtsang4/claude-to-chatgpt). (deprecated in 0.1.5) 
 - Add Support for Chinese on Linux and Windows. (also add a temporary solution for VSCode Terminal on Windows).
 - Add a timeout function.
 - Fix: C++ code block prefix.
@@ -91,4 +91,10 @@ Please execute it or not at your own discretion. I am not responsible for the co
 #### 0.1.5
 
 - Fix: Change api to a third-party proxy. Affected by GFW's DNS domain pollution, the original proxy is temporarily unavailable. `claude-to-chatgpt` is unavailable.
+
+#### 0.1.6
+
+- Feat: Add support for **Chat** on Linux. Now you can use tax as **ChatGPT CLI**!
+- Feat: Add support for native Anthropic Claude API on Linux Shell, Windows cmd and Powershell.
+
 </details>
