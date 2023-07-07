@@ -91,12 +91,10 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
         f"Authorization='Bearer {openai_key}'",
         "'Content-Type'='application/json'"
     ]
-
     urls = {
         'openai_gfw': 'https://api.openai-proxy.com/v1/chat/completions',
         'openai': 'https://api.openai.com/v1/chat/completions',
     }
-    
     url = urls[url_option] if url_option in urls else url_option
 
     if model.lower() == 'dalle':
@@ -113,10 +111,15 @@ def single_claude(anthropic_api_key: str, model: str, prompt: str) -> str:
         "content-type: application/json",
         f"x-api-key: {anthropic_api_key}"
     ]
+    terminal_headers = [
+        "'anthropic-version'='2023-06-01'",
+        "'content-type'='application/json'",
+        f"'x-api-key'='{anthropic_api_key}'"
+    ]
     data = f'{{"model": "{model}","prompt": "\\n\\nHuman: {prompt}\\n\\nAssistant:","max_tokens_to_sample": 256,"stream": false}}'
     if os.name == 'nt':
         if check_terminal() == 'powershell':
-            wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]};{terminal_headers[2]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
+            wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]};{terminal_headers[2]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty completion'
             print(
                 f'Current version does not fully support Windows PowerShell. Please copy command below and paste:\n\n{wt_command}')
             return ''
@@ -200,7 +203,7 @@ def main() -> None:
     if args.chat:
         chat(key, args.model, args.url)
         return
-    
+
     if args.model.lower() == 'claude' or args.url == 'claude':
         res = single_claude(key, 'claude-1', prompt)
         print(res)
