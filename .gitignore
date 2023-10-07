@@ -9,3 +9,4 @@ build/
 info.sh
 tests/test.py
 claude.sh
+*.txt
