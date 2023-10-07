@@ -7,6 +7,7 @@ import json
 from typing import Tuple
 import psutil
 import datetime
+import concurrent.futures
 
 
 def check_terminal() -> str:
@@ -174,6 +175,25 @@ def chat(openai_key: str, model: str, url_option: str):
         # print(conversation)
 
 
+def parallel_ask(data_prompts, chat_model, max_workers, output_file, **args):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_prompt = {executor.submit(chat_model, prompt=prompt, **args): prompt for prompt in data_prompts}
+        for future in concurrent.futures.as_completed(future_to_prompt):
+            prompt = future_to_prompt[future]
+            try:
+                data = future.result()
+            except Exception as exc:
+                print(f'{prompt} generated an exception: {exc}')
+            else:
+                # print(f'{prompt} generated {data}')
+                if output_file:
+                    with open(output_file, 'a', encoding='utf-8') as f:
+                        f.write(f'{prompt} : {data}\n\n')
+                    f.close()
+
+
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
@@ -232,4 +252,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    parallel_ask(data_prompts=['hi'], chat_model=fetch_code, max_workers=3, output_file='output.txt', openai_key='', model='gpt-3.5-turbo', url_option='openai', chat_flag=False)
