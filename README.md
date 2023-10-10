@@ -40,6 +40,17 @@ Tax: Hello! How can I assist you today?
 
 Use `tax -h` to get more information.
 
+### Parallel
+
+You can use `tax --parallel` to run multiple processes at the same time. For example, 
+```
+tax -p -i input.txt -o output.txt -k sk-xxx --option max_workers=3 --option chat_mode=openai
+```
+
+and put your prompts in `input.txt`, each line is a prompt. The results will be saved in `output.txt`.
+
+OpenAI update the API policy. Please ensure that you have enough quota to run.
+
 ## Attention
 
 You can see a directive after the generated command that says
@@ -96,5 +107,9 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 - Feat: Add support for **Chat** on Linux. Now you can use tax as **ChatGPT CLI**!
 - Feat: Add support for native Anthropic Claude API on Linux Shell, Windows cmd and Powershell.
+
+#### 0.1.7
+
+- Feat: Add support for parallel processing with openai mode.
 
 </details>

@@ -47,6 +47,7 @@ def kill_process_tree(pid: int) -> None:
 
 
 def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool) -> str:
+    # print(f'fetch_code has been called with {openai_key}, {model}, {prompt}, {url_option}, {chat_flag}')
     url, headers, terminal_headers, data = req_info(
         openai_key, model, prompt, url_option, chat_flag)
     if os.name == 'nt':  # Windows
@@ -63,11 +64,11 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
         command = f'{command} --ipv4' if model == 'claude' else command
     else:  # Linux
         command = f"curl -s --location '{url}' --header '{headers[0]}' --header '{headers[1]}' --data '{data}'"
-    print(command)
+    # print(command)
 
     try:
         res, err = run_command_with_timeout(command, 60)
-        print(res)
+        # print(res)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         if model.lower() == 'dalle':
             return json.loads(res)['data'][0]['url']
@@ -175,31 +176,27 @@ def chat(openai_key: str, model: str, url_option: str):
         # print(conversation)
 
 
-def parallel_ask(data_prompts, chat_mode, max_workers, output_file, model, **args):
+def parallel_ask(data_prompts, chat_mode, api_key, url, max_workers, output_file, model, **args):
     with concurrent.futures.ThreadPoolExecutor(max_workers=int(max_workers)) as executor:
-        future_to_prompt = []
-        for prompt in data_prompts:
-            future_to_prompt.append(executor.submit(
-                chat_mode, prompt=prompt, model=model, **args))
+        if chat_mode == 'openai':
+            future_to_prompt = {executor.submit(fetch_code, **args, openai_key=api_key, url_option=url, prompt=prompt, model=model, chat_flag=False): prompt for prompt in data_prompts}
         results = []
         for future in concurrent.futures.as_completed(future_to_prompt):
             try:
                 data = future.result()
             except Exception as exc:
                 data = str(type(exc))
-            results.append(data)
+            results.append(repr(data))
     if output_file:
         with open(output_file, 'w', encoding='utf-8') as f:
-            f.write('\n'.join(results))
+            f.write('\n'.join((results)))
         f.close()
 
 
 def load_prompts_file(model, path: str) -> str:
     with open(path, 'r', encoding='utf-8') as f:
         text = f.readlines()
-    text = [line.strip() for line in text]
-    wrappers = [chat_data_wrapper(model, prompt, False) for prompt in text]
-    return wrappers
+    return [line.strip() for line in text]
 
 
 def main() -> None:
@@ -226,7 +223,7 @@ def main() -> None:
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)
-    prompt = f'{prompt}\\n{load_file(args.input)}' if args.input else prompt
+    prompt = f'{prompt}\\n{load_file(args.input)}' if args.input and not args.parallel else prompt
 
     key = args.key or os.environ.get('OpenAI_KEY')
     if not key:
@@ -240,20 +237,19 @@ def main() -> None:
         print(res)
         return
 
+    if args.option and args.parallel:
+        custom_options = {option.split('=')[0]: option.split('=')[1]
+                          for option in args.option}
+
+        parallel_ask(data_prompts=load_prompts_file(args.model, args.input), output_file=args.output, model=args.model, api_key=key, url=args.url, **custom_options)
+        print(f'The results have been saved to {args.output}')
+        return
+
+
     # res = get_model_response(openai_key, args.model, prompt)
     res = fetch_code(key, args.model, prompt, args.url, False)
 
-    if args.option and args.parallel:
-        custom_options = {}
-        for option in args.option:
-            key, value = option.split('=')
-            custom_options[key] = value
-
-        print(parallel_ask(data_prompts=load_prompts_file(args.model, args.input), output_file=args.output, model=args.model, **custom_options))
-        return 
-
-    # tax -i input.txt -o output.txt -m gpt-3.5-turbo -u openai_gfw -k xxx --option chat_mode=fetch_code 
-
+    
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             f.write(res)
