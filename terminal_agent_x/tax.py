@@ -5,9 +5,12 @@ import argparse
 import re
 import json
 from typing import Tuple
-import psutil
 import datetime
 import concurrent.futures
+import base64
+import http.client
+import psutil
+
 
 
 def check_terminal() -> str:
@@ -22,6 +25,8 @@ def check_terminal() -> str:
 def run_command_with_timeout(command: str, timeout: int) -> Tuple[str, str]:
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True)
+    # res = p.stdout.read().decode('utf-8', 'ignore')
+    # print(res)
     try:
         stdout, stderr = p.communicate(timeout=timeout)
         return stdout.decode('utf-8', 'ignore'), stderr.decode('utf-8', 'ignore')
@@ -46,10 +51,10 @@ def kill_process_tree(pid: int) -> None:
         pass
 
 
-def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool) -> str:
+def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, image=None) -> str:
     # print(f'fetch_code has been called with {openai_key}, {model}, {prompt}, {url_option}, {chat_flag}')
     url, headers, terminal_headers, data = req_info(
-        openai_key, model, prompt, url_option, chat_flag)
+        openai_key, model, prompt, url_option, chat_flag, image)
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
@@ -67,25 +72,29 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
     # print(command)
 
     try:
-        res, err = run_command_with_timeout(command, 60)
+        res = run_command_with_timeout(command, 60)
         # print(res)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         if model.lower() == 'dalle':
             return json.loads(res)['data'][0]['url']
         return json.loads(res)['choices'][0]['message']['content']
-    except:
-        return 'Error', res, err
+    except Exception as e:
+        return 'Error', e
 
 
-def chat_data_wrapper(model: str, prompt: str, chat_flag: bool) -> str:
+def chat_data_wrapper(model: str, prompt: str, chat_flag: bool, input_image=None) -> str:
     if chat_flag:
         return f'{{"model": "{model}","messages":{prompt}}}'  # 组装数据的部分在函数之外完成
     if model.lower() == 'dalle':
         return f'{{"prompt": "{prompt}"}}'
+    # if input_image and model.lower() == 'gpt-4-vision-preview':
+    #     base64_image = encode_image(input_image)
+    #     content = f'[{{"type": "text","text": "{prompt}"}},{{"type": "image_url","image_url": {{"url": "data:image/jpeg;base64,{base64_image[-1]}"}}}}]'
+    #     return f'{{"model": "{model}","messages": [{{"role": "user", "content": "{content}"}}], "max_tokens": 300}}'
     return f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
 
 
-def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool) -> Tuple[str, str, str, str]:
+def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, input_image=None) -> Tuple[str, str, str, str]:
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -102,7 +111,7 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
 
     if model.lower() == 'dalle':
         url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
-    data = chat_data_wrapper(model, prompt, chat_flag)
+    data = chat_data_wrapper(model, prompt, chat_flag, input_image)
     return url, headers, terminal_headers, data
 
 
@@ -136,8 +145,10 @@ def single_claude(anthropic_api_key: str, model: str, prompt: str) -> str:
     try:
         res, err = run_command_with_timeout(command, 60)
         return json.loads(res)['completion']
-    except:
+    except Exception as e:
+        err = str(e)
         return 'Error', res, err
+
 
 
 def find_code(text: str) -> str:
@@ -193,10 +204,54 @@ def parallel_ask(data_prompts, chat_mode, api_key, url, max_workers, output_file
         f.close()
 
 
-def load_prompts_file(model, path: str) -> str:
+def load_prompts_file(path: str) -> str:
     with open(path, 'r', encoding='utf-8') as f:
         text = f.readlines()
     return [line.strip() for line in text]
+
+
+def process_image(api_key, url, prompt, image_path, model):
+    url = url.replace('https://', '')
+    url = url[:-1] if url[-1] == '/' else url
+    conn = http.client.HTTPSConnection(url)
+
+    def encode_image(image_path):
+        with open(image_path, "rb") as image_file:
+            return base64.b64encode(image_file.read()).decode('utf-8')
+
+    payload = json.dumps({
+      "model": f'{model}',
+      "stream": False,
+      "messages": [
+         {
+            "role": "user",
+            "content": [
+               {
+                  "type": "text",
+                  "text": f'{prompt}'
+               },
+               {
+                  "type": "image_url",
+                  "image_url": {
+                     "url": f'data:image/jpeg;base64,{encode_image(image_path)}'
+                  }
+               }
+            ]
+         }
+      ],
+      "max_tokens": 400
+   })
+    headers = {
+      'Accept': 'application/json',
+      'Authorization': f'Bearer {api_key}',
+      'Content-Type': 'application/json'
+   }
+    conn.request("POST", "/v1/chat/completions", payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    # print(data.decode("utf-8"))
+    ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
+    return ans
 
 
 def main() -> None:
@@ -207,7 +262,9 @@ def main() -> None:
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('-m', '--model', type=str,
                         default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s, Claude API or DALLE.')
-    parser.add_argument('-i', '--input', type=str,
+    parser.add_argument('-i', '--input_image', type=str,
+                        help='Input image for OpenAI GPT-4-vision [Beta Feature].')
+    parser.add_argument('--prompt_file', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
                         help='Output file. If specified, the response will be saved to the file.')
@@ -223,7 +280,7 @@ def main() -> None:
     args = parser.parse_args()
 
     prompt = ' '.join(args.prompt)
-    prompt = f'{prompt}\\n{load_file(args.input)}' if args.input and not args.parallel else prompt
+    prompt = f'{prompt}\\n{load_file(args.prompt_file)}' if args.prompt_file and not args.parallel else prompt
 
     key = args.key or os.environ.get('OpenAI_KEY')
     if not key:
@@ -241,20 +298,24 @@ def main() -> None:
         custom_options = {option.split('=')[0]: option.split('=')[1]
                           for option in args.option}
 
-        parallel_ask(data_prompts=load_prompts_file(args.model, args.input), output_file=args.output, model=args.model, api_key=key, url=args.url, **custom_options)
+        parallel_ask(data_prompts=load_prompts_file(args.prompt_file), output_file=args.output, model=args.model, api_key=key, url=args.url, **custom_options)
         print(f'The results have been saved to {args.output}')
         return
 
+    if args.input_image:
+        res = process_image(key, args.url, prompt, args.input_image, args.model)
+        print(res)
+        return
 
     # res = get_model_response(openai_key, args.model, prompt)
-    res = fetch_code(key, args.model, prompt, args.url, False)
+    res = fetch_code(key, args.model, prompt, args.url, False, None)
 
-    
+
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
             f.write(res)
         f.close()
-    elif args.show_all or args.model.lower() == 'dalle':
+    elif args.show_all or args.model.lower() == 'dalle' or args.model.lower() == 'gpt-4-vision-preview':
         print(res)
     else:
         first_code = find_code(res)

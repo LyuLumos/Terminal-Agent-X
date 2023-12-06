@@ -27,12 +27,12 @@ Use `python -c "import os;print(os.environ.get('OpenAI_KEY'))"` for testing.
 
 You can use the `tax <prompt>` to interact with the model, like:
 
-```
+```bash
 $ tax write a python code for fibonacci
 ```
 
 or use `tax --chat` to chat with the model.
-```
+```bash
 $ tax --chat
 > hi
 Tax: Hello! How can I assist you today?
@@ -43,7 +43,7 @@ Use `tax -h` to get more information.
 ### Parallel
 
 You can use `tax --parallel` to run multiple processes at the same time. For example, 
-```
+```bash
 tax -p -i input.txt -o output.txt -k sk-xxx --option max_workers=3 --option chat_mode=openai
 ```
 
