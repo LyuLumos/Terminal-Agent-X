@@ -38,13 +38,13 @@ $ tax --chat
 Tax: Hello! How can I assist you today?
 ```
 
-Use `tax -h` to get more information.
+Use `tax -h` to get more information. `gpt-4` and `gpt-4-vision-preview` are only available for users who have access to the OpenAI GPT4 APIs (user need to made a successful payment of $1).
 
 ### Parallel
 
 You can use `tax --parallel` to run multiple processes at the same time. For example, 
 ```bash
-tax -p -i input.txt -o output.txt -k sk-xxx --option max_workers=3 --option chat_mode=openai
+tax -p --prompt_file input.txt -o output.txt --option max_workers=3 --option chat_mode=openai
 ```
 
 and put your prompts in `input.txt`, each line is a prompt. The results will be saved in `output.txt`.
@@ -107,9 +107,18 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 - Feat: Add support for **Chat** on Linux. Now you can use tax as **ChatGPT CLI**!
 - Feat: Add support for native Anthropic Claude API on Linux Shell, Windows cmd and Powershell.
-
+s
 #### 0.1.7
 
 - Feat: Add support for parallel processing with openai mode.
+
+#### 0.1.8
+
+- Feat: Add support for OpenAI `gpt-4-vision-preview` model on all platforms (Beta feature). For example,
+    ```bash
+    $ tax -i logo.jpg -m gpt-4-vision-preview what is this?
+    This appears to be a logo or emblem for something called "Most Creative Learning." The design features a stylized triangular shape, possibly an optical illusion known as a Penrose triangle, ...
+    ```
+- Refactor: Change the way of URL selection and image input.
 
 </details>

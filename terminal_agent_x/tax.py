@@ -72,7 +72,7 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
     # print(command)
 
     try:
-        res = run_command_with_timeout(command, 60)
+        res, _ = run_command_with_timeout(command, 60)
         # print(res)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
         if model.lower() == 'dalle':
@@ -104,13 +104,18 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
         "'Content-Type'='application/json'"
     ]
     urls = {
-        'openai_gfw': 'https://api.openai-proxy.com/v1/chat/completions',
-        'openai': 'https://api.openai.com/v1/chat/completions',
+        'openai_gfw': 'https://api.openai-proxy.com',
+        'openai': 'https://api.openai.com',
     }
     url = urls[url_option] if url_option in urls else url_option
 
     if model.lower() == 'dalle':
         url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
+    
+    if '.' in url[:-1].split('/')[-1]:
+        url = url+'/' if url[-1] != '/' else url
+        url += "v1/chat/completions"
+
     data = chat_data_wrapper(model, prompt, chat_flag, input_image)
     return url, headers, terminal_headers, data
 
@@ -213,6 +218,7 @@ def load_prompts_file(path: str) -> str:
 def process_image(api_key, url, prompt, image_path, model):
     url = url.replace('https://', '')
     url = url[:-1] if url[-1] == '/' else url
+    # print(url)
     conn = http.client.HTTPSConnection(url)
 
     def encode_image(image_path):
@@ -220,16 +226,16 @@ def process_image(api_key, url, prompt, image_path, model):
             return base64.b64encode(image_file.read()).decode('utf-8')
 
     payload = json.dumps({
-      "model": f'{model}',
-      "stream": False,
-      "messages": [
-         {
+        "model": f'{model}',
+        "stream": False,
+        "messages": [
+        {
             "role": "user",
             "content": [
-               {
-                  "type": "text",
-                  "text": f'{prompt}'
-               },
+                {
+                    "type": "text",
+                    "text": f'{prompt}'
+                },
                {
                   "type": "image_url",
                   "image_url": {
@@ -240,12 +246,13 @@ def process_image(api_key, url, prompt, image_path, model):
          }
       ],
       "max_tokens": 400
-   })
+    })
     headers = {
       'Accept': 'application/json',
       'Authorization': f'Bearer {api_key}',
       'Content-Type': 'application/json'
-   }
+    }
+    
     conn.request("POST", "/v1/chat/completions", payload, headers)
     res = conn.getresponse()
     data = res.read()
@@ -271,7 +278,7 @@ def main() -> None:
     parser.add_argument('-c', '--chat', action='store_true',
                         help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
     parser.add_argument('-u', '--url', type=str, default='openai',
-                        help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url.")
+                        help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url such as 'https://api.openai.com'.")
     parser.add_argument('-a', '--show_all', action='store_true',
                         help='Show all contents in the response.')
     parser.add_argument('-p', '--parallel', action='store_true',
@@ -303,6 +310,7 @@ def main() -> None:
         return
 
     if args.input_image:
+        print('[TAX HINT]: This feature is still in beta. Please use it with caution.')
         res = process_image(key, args.url, prompt, args.input_image, args.model)
         print(res)
         return
