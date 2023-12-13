@@ -9,8 +9,8 @@ import datetime
 import concurrent.futures
 import base64
 import http.client
+import sys
 import psutil
-
 
 
 def check_terminal() -> str:
@@ -261,6 +261,32 @@ def process_image(api_key, url, prompt, image_path, model):
     return ans
 
 
+def https_chat_openai_request(url, api_key, model, prompt):
+    url = url.replace('https://', '')
+    url = url[:-1] if url[-1] == '/' else url
+    conn = http.client.HTTPSConnection(url)
+    headers = {
+      'Accept': 'application/json',
+      'Authorization': f'Bearer {api_key}',
+      'Content-Type': 'application/json'
+    }
+    payload = json.dumps({
+        "model": f'{model}',
+        "stream": False,
+        "messages": [
+        {
+            "role": "user",
+            "content": f'{prompt}'
+        }
+      ],
+      "max_tokens": 1024
+    })
+    conn.request("POST", "/v1/chat/completions", payload, headers)
+    data = conn.getresponse().read()
+    ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
+    return ans
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description='Tax: A terminal agent using OpenAI/Claude API')
@@ -283,6 +309,8 @@ def main() -> None:
                         help='Show all contents in the response.')
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='Parallel mode. If specified, the input file will be read line by line and the responses will be saved to the output file.')
+    # parser.add_argument('--plugin', type=str, choices=['git_commit'],
+    #                     help='Plugins with the third-party software or API.')
     parser.add_argument('--option', metavar='KEY=VALUE', action='append', help='Custom option')
     args = parser.parse_args()
 
@@ -292,6 +320,22 @@ def main() -> None:
     key = args.key or os.environ.get('OpenAI_KEY')
     if not key:
         assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
+
+    input_args = sys.stdin.readlines()
+    prompt = f'{prompt}\\n{repr("".join(input_args))}' if input_args else prompt
+    if input_args:
+        res = https_chat_openai_request(args.url, args.key, args.model, prompt)
+        print(res)
+        return
+
+    # if args.plugin == 'git_commit':
+    #     command = f'git diff | python terminal_agent_x/tax.py -k {key} -m {args.model} -u {args.url} {prompt}\\n 根据git diff结果写出git commit message'
+    #     res = run_command_with_timeout(command, 30)
+    #     print(res)
+    #     return
+    
+    https_chat_openai_request(args.url, args.key, args.model, prompt)
+
     if args.chat:
         chat(key, args.model, args.url)
         return
@@ -315,12 +359,12 @@ def main() -> None:
         print(res)
         return
 
-    # res = get_model_response(openai_key, args.model, prompt)
     res = fetch_code(key, args.model, prompt, args.url, False, None)
-
 
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
+            if args.show_all:
+                res = find_code(res) or res
             f.write(res)
         f.close()
     elif args.show_all or args.model.lower() == 'dalle' or args.model.lower() == 'gpt-4-vision-preview':
