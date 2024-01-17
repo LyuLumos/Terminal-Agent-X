@@ -18,9 +18,15 @@ pip install terminal-agent-x
 
 ## Config
 
-You need to add the environment variable `OpenAI_KEY` to the path. Please get your `OpenAI_KEY` from [OpenAI](https://platform.openai.com/account/api-keys).
+You need to add the following environment variable:
 
-Use `python -c "import os;print(os.environ.get('OpenAI_KEY'))"` for testing.
+```bash
+# in .bashrc or for temporary use
+export tax_key=sk-xxx
+export tax_base_url=YOUR_BASE_URL # optional, default: https://api.openai.com
+```
+
+Get your OpenAI key from [OpenAI](https://platform.openai.com/account/api-keys) or Claude API key from [Anthropic](https://www.anthropic.com/claude/)
 
 
 ## Get Started
@@ -31,12 +37,18 @@ You can use the `tax <prompt>` to interact with the model, like:
 $ tax write a python code for fibonacci
 ```
 
-or use `tax --chat` to chat with the model.
-```bash
-$ tax --chat
-> hi
-Tax: Hello! How can I assist you today?
-```
+## Usage
+
+| Model/mode | Command | Description |
+| :--- | :--- | :--- |
+| OpenAI ChatGPT | `tax <prompt>` | Use GPT-3.5 to generate code. |
+| OpenAI ChatGPT | `tax <prompt> -a` | Use GPT-3.5 to generate content. |
+| OpenAI GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate code. |
+| OpenAI DALLE | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
+| OpenAI GPT-4 Vision Preview | `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
+| Anthropic Claude | `tax <prompt> -m claude` | Use Claude to generate code. Use `-k your_claude_key` if you have set openai key in the environment variable. |
+| Chat with `gpt-3.5-turbo` | `tax -m gpt-3.5-turbo -c` |  Chat with GPT-3.5. |
+
 
 Use `tax -h` to get more information. `gpt-4` and `gpt-4-vision-preview` are only available for users who have access to the OpenAI GPT4 APIs (user need to made a successful payment of $1).
 

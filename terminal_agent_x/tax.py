@@ -75,7 +75,7 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
         res, _ = run_command_with_timeout(command, 60)
         # print(res)
         # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
-        if model.lower() == 'dalle':
+        if 'dalle' in model.lower() or 'dall-e' in model.lower():
             return json.loads(res)['data'][0]['url']
         return json.loads(res)['choices'][0]['message']['content']
     except Exception as e:
@@ -85,8 +85,8 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
 def chat_data_wrapper(model: str, prompt: str, chat_flag: bool, input_image=None) -> str:
     if chat_flag:
         return f'{{"model": "{model}","messages":{prompt}}}'  # 组装数据的部分在函数之外完成
-    if model.lower() == 'dalle':
-        return f'{{"prompt": "{prompt}"}}'
+    if 'dalle' in model.lower() or 'dall-e' in model.lower():
+        return f'{{"prompt": "{prompt}", "n": 1, "model": "dall-e-3", "size": "1024x1024"}}'
     # if input_image and model.lower() == 'gpt-4-vision-preview':
     #     base64_image = encode_image(input_image)
     #     content = f'[{{"type": "text","text": "{prompt}"}},{{"type": "image_url","image_url": {{"url": "data:image/jpeg;base64,{base64_image[-1]}"}}}}]'
@@ -109,12 +109,15 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
     }
     url = urls[url_option] if url_option in urls else url_option
 
-    if model.lower() == 'dalle':
-        url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
+    # if model.lower() == 'dalle':
+    #     url = 'https://api.openai-proxy.com/v1/images/generations' if url_option == 'openai_gfw' else 'https://api.openai.com/v1/images/generations'
     
     if '.' in url[:-1].split('/')[-1]:
         url = url+'/' if url[-1] != '/' else url
-        url += "v1/chat/completions"
+        if 'dalle' in model.lower() or 'dall-e' in model.lower():
+            url += "v1/images/generations"
+        else:
+            url += "v1/chat/completions"
 
     data = chat_data_wrapper(model, prompt, chat_flag, input_image)
     return url, headers, terminal_headers, data
@@ -216,9 +219,8 @@ def load_prompts_file(path: str) -> str:
 
 
 def process_image(api_key, url, prompt, image_path, model):
-    url = url.replace('https://', '')
-    url = url[:-1] if url[-1] == '/' else url
     # print(url)
+    url = url.replace('https://', '')
     conn = http.client.HTTPSConnection(url)
 
     def encode_image(image_path):
@@ -303,7 +305,7 @@ def main() -> None:
                         help='Output file. If specified, the response will be saved to the file.')
     parser.add_argument('-c', '--chat', action='store_true',
                         help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
-    parser.add_argument('-u', '--url', type=str, default='openai',
+    parser.add_argument('-u', '--url', type=str,
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url such as 'https://api.openai.com'.")
     parser.add_argument('-a', '--show_all', action='store_true',
                         help='Show all contents in the response.')
@@ -317,30 +319,35 @@ def main() -> None:
     prompt = ' '.join(args.prompt)
     prompt = f'{prompt}\\n{load_file(args.prompt_file)}' if args.prompt_file and not args.parallel else prompt
 
-    key = args.key or os.environ.get('OpenAI_KEY')
-    if not key:
-        assert False, 'Error: OpenAI key not found. Please specify it in system environment variables or pass it as an argument.'
+    key = args.key or os.environ.get('tax_key')
+    url = args.url or os.environ.get('tax_base_url')
+    url = url[:-1] if url[-1] == '/' else url
 
-    input_args = sys.stdin.readlines()
-    prompt = f'{prompt}\\n{repr("".join(input_args))}' if input_args else prompt
-    if input_args:
-        res = https_chat_openai_request(args.url, args.key, args.model, prompt)
-        print(res)
-        return
+
+    if not key:
+        assert False, 'Error: tax_key not found. Please specify it in system environment variables or pass it as an argument.'
+    if not url:
+        url = 'https://api.openai.com'
+
+    # input_args = sys.stdin.readlines()
+    # prompt = f'{prompt}\\n{repr("".join(input_args))}' if input_args else prompt
+    # if input_args:
+    #     res = https_chat_openai_request(args.url, args.key, args.model, prompt)
+    #     print(res)
+    #     return
 
     # if args.plugin == 'git_commit':
     #     command = f'git diff | python terminal_agent_x/tax.py -k {key} -m {args.model} -u {args.url} {prompt}\\n 根据git diff结果写出git commit message'
     #     res = run_command_with_timeout(command, 30)
     #     print(res)
     #     return
-    
-    https_chat_openai_request(args.url, args.key, args.model, prompt)
+    # https_chat_openai_request(args.url, args.key, args.model, prompt)
 
     if args.chat:
-        chat(key, args.model, args.url)
+        chat(key, args.model, url)
         return
 
-    if args.model.lower() == 'claude' or args.url == 'claude':
+    if args.model.lower() == 'claude' or url == 'claude':
         res = single_claude(key, 'claude-1', prompt)
         print(res)
         return
@@ -349,17 +356,17 @@ def main() -> None:
         custom_options = {option.split('=')[0]: option.split('=')[1]
                           for option in args.option}
 
-        parallel_ask(data_prompts=load_prompts_file(args.prompt_file), output_file=args.output, model=args.model, api_key=key, url=args.url, **custom_options)
+        parallel_ask(data_prompts=load_prompts_file(args.prompt_file), output_file=args.output, model=args.model, api_key=key, url=url, **custom_options)
         print(f'The results have been saved to {args.output}')
         return
 
     if args.input_image:
         print('[TAX HINT]: This feature is still in beta. Please use it with caution.')
-        res = process_image(key, args.url, prompt, args.input_image, args.model)
+        res = process_image(key, url, prompt, args.input_image, args.model)
         print(res)
         return
 
-    res = fetch_code(key, args.model, prompt, args.url, False, None)
+    res = fetch_code(key, args.model, prompt, url, False, None)
 
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
@@ -367,7 +374,7 @@ def main() -> None:
                 res = find_code(res) or res
             f.write(res)
         f.close()
-    elif args.show_all or args.model.lower() == 'dalle' or args.model.lower() == 'gpt-4-vision-preview':
+    elif args.show_all or 'dalle' in args.model.lower() or 'dall-e' in args.model.lower()  or args.model.lower() == 'gpt-4-vision-preview':
         print(res)
     else:
         first_code = find_code(res)
@@ -384,4 +391,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-    # parallel_ask(data_prompts=['hi'], chat_mode=fetch_code, max_workers=3, output_file='output.txt', openai_key='', model='gpt-3.5-turbo', url_option='openai', chat_flag=False)
