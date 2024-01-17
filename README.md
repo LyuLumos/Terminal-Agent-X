@@ -1,13 +1,13 @@
 # Terminal-Agent-X
 
-[EN](README.md) / [中文](https://github.com/LyuLumos/Terminal-Agent-X/blob/main/README_cn.md) / [Wiki](https://github.com/LyuLumos/Terminal-Agent-X/wiki)
+[EN](README.md) / [中文](https://github.com/LyuLumos/Terminal-Agent-X/blob/main/README_cn.md) 
 
 ## Features
 
 - 👻 Easy installation and usage with a single command.
 - 🎈 Small size, no additional dependencies required.
 - 🐼 Supports English and Chinese on Windows CMD, Powershell, Linux shell, etc.
-- 🤖 Compatible with OpenAI GPT-3.5/4s, DALL·E, and Claude API in Chinese Mainland and other countries.
+- 🤖 Compatible with OpenAI GPT-3.5/4s, DALL·E, and Claude API in OpenAI, Anthropic or the third-party.
 
 
 ## Install
@@ -21,12 +21,11 @@ pip install terminal-agent-x
 You need to add the following environment variable:
 
 ```bash
-# in .bashrc or for temporary use
 export tax_key=sk-xxx
 export tax_base_url=YOUR_BASE_URL # optional, default: https://api.openai.com
 ```
 
-Get your OpenAI key from [OpenAI](https://platform.openai.com/account/api-keys) or Claude API key from [Anthropic](https://www.anthropic.com/claude/)
+Get your OpenAI key from [OpenAI](https://platform.openai.com/account/api-keys) or Claude API key from [Anthropic](https://www.anthropic.com/claude/) and set it as `tax_key`.
 
 
 ## Get Started
@@ -39,31 +38,26 @@ $ tax write a python code for fibonacci
 
 ## Usage
 
-| Model/mode | Command | Description |
+| Model | Command | Description |
 | :--- | :--- | :--- |
-| OpenAI ChatGPT | `tax <prompt>` | Use GPT-3.5 to generate code. |
-| OpenAI ChatGPT | `tax <prompt> -a` | Use GPT-3.5 to generate content. |
-| OpenAI GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate code. |
-| OpenAI DALLE | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
+| OpenAI ChatGPT | `tax <prompt>` | Use `gpt-3.5-turbo` to generate content. |
+| OpenAI ChatGPT | `tax <prompt> --code` | Use `gpt-3.5-turbo` to generate code. If only one line is generated, it will be executed automatically with your permission. |
+| OpenAI GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate content. |
+| OpenAI DALL·E 3 | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
 | OpenAI GPT-4 Vision Preview | `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
 | Anthropic Claude | `tax <prompt> -m claude` | Use Claude to generate code. Use `-k your_claude_key` if you have set openai key in the environment variable. |
-| Chat with `gpt-3.5-turbo` | `tax -m gpt-3.5-turbo -c` |  Chat with GPT-3.5. |
 
 
-Use `tax -h` to get more information. `gpt-4` and `gpt-4-vision-preview` are only available for users who have access to the OpenAI GPT4 APIs (user need to made a successful payment of $1).
+| Mode | Command | Description |
+| :--- | :--- | :--- |
+| Chat with `gpt-3.5-turbo` | `tax -m gpt-3.5-turbo -c` |  Chat with `gpt-3.5-turbo`. |
+| Use a third-party base url and key | `tax <prompt> -u <base_url> -k <key>`| The url and key will be use before the environment variable. |
+| Save result to file | `tax <prompt> -o <output_file>` | Save response to a file. |
+| Read prompts from file| `tax --prompt_file <prompt_file>` | Read prompt from file, one prompt per line. Please ensure tht you have enough quota. |
+| Parallel processing | `tax -p --prompt_file input.txt -o output.txt --option max_workers=3 --option chat_mode=openai` | Set more options for parallel processing. For example, `--option max_workers=3` means that you can run 3 processes at the same time. |
 
-### Parallel
 
-You can use `tax --parallel` to run multiple processes at the same time. For example, 
-```bash
-tax -p --prompt_file input.txt -o output.txt --option max_workers=3 --option chat_mode=openai
-```
-
-and put your prompts in `input.txt`, each line is a prompt. The results will be saved in `output.txt`.
-
-OpenAI update the API policy. Please ensure that you have enough quota to run.
-
-## Attention
+## Attention!
 
 You can see a directive after the generated command that says
 ```
@@ -119,7 +113,7 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 - Feat: Add support for **Chat** on Linux. Now you can use tax as **ChatGPT CLI**!
 - Feat: Add support for native Anthropic Claude API on Linux Shell, Windows cmd and Powershell.
-s
+
 #### 0.1.7
 
 - Feat: Add support for parallel processing with openai mode.
@@ -132,5 +126,11 @@ s
     This appears to be a logo or emblem for something called "Most Creative Learning." The design features a stylized triangular shape, possibly an optical illusion known as a Penrose triangle, ...
     ```
 - Refactor: Change the way of URL selection and image input.
+
+#### 0.1.9
+
+- Feat: Update OpenAI DALL·E to `dall-e-3` model.
+- Refactor: Change the name of environment variable from `openai_key` to `tax_key`. And some options are also changed. Please check the help message for more details.
+- Fix: Fix the bug of `--code` option when generating code to file.
 
 </details>

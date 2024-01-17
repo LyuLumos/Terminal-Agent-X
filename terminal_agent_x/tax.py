@@ -307,8 +307,8 @@ def main() -> None:
                         help='Chat mode. Tax will act like ChatGPT. Enter "exit" to quit.')
     parser.add_argument('-u', '--url', type=str,
                         help="URL for API request. Choose from ['openai_gfw', 'openai', 'claude'] or your custom url such as 'https://api.openai.com'.")
-    parser.add_argument('-a', '--show_all', action='store_true',
-                        help='Show all contents in the response.')
+    parser.add_argument('--code', action='store_true',
+                        help='Only show the code.')
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='Parallel mode. If specified, the input file will be read line by line and the responses will be saved to the output file.')
     # parser.add_argument('--plugin', type=str, choices=['git_commit'],
@@ -321,13 +321,14 @@ def main() -> None:
 
     key = args.key or os.environ.get('tax_key')
     url = args.url or os.environ.get('tax_base_url')
-    url = url[:-1] if url[-1] == '/' else url
-
 
     if not key:
         assert False, 'Error: tax_key not found. Please specify it in system environment variables or pass it as an argument.'
     if not url:
         url = 'https://api.openai.com'
+
+    url = url[:-1] if url[-1] == '/' else url
+
 
     # input_args = sys.stdin.readlines()
     # prompt = f'{prompt}\\n{repr("".join(input_args))}' if input_args else prompt
@@ -370,13 +371,11 @@ def main() -> None:
 
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
-            if args.show_all:
+            if args.code:
                 res = find_code(res) or res
             f.write(res)
         f.close()
-    elif args.show_all or 'dalle' in args.model.lower() or 'dall-e' in args.model.lower()  or args.model.lower() == 'gpt-4-vision-preview':
-        print(res)
-    else:
+    elif args.code:
         first_code = find_code(res)
         if not first_code:
             print(res)
@@ -387,6 +386,8 @@ def main() -> None:
                 answer = input('Do you want to execute the command? (y/n)  ')
                 if answer in ['y', 'Y', 'yes', 'Yes', 'YES']:
                     os.system(first_code)
+    else:
+        print(res)
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "terminal-agent-x"
-version = "0.1.8"
+version = "0.1.9"
 authors = [
   { name="LyuLumos", email="lyujiuyang0@gmail.com" },
 ]
@@ -30,4 +30,3 @@ tax = "terminal_agent_x.tax:main"
 [project.urls]
 "Homepage" = "https://github.com/LyuLumos/Terminal-Agent-X"
 "Bug Tracker" = "https://github.com/LyuLumos/Terminal-Agent-X/issues"
-"Wiki" = "https://github.com/LyuLumos/Terminal-Agent-X/wiki"
