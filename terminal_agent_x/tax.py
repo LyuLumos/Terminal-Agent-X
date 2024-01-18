@@ -9,7 +9,6 @@ import datetime
 import concurrent.futures
 import base64
 import http.client
-import sys
 import psutil
 
 
@@ -22,14 +21,30 @@ def check_terminal() -> str:
         return 'cmd'
 
 
-def run_command_with_timeout(command: str, timeout: int) -> Tuple[str, str]:
+def run_command_with_timeout(command: str, timeout: int, stream_flag: bool) -> Tuple[str, str]:
     p = subprocess.Popen(command, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE, shell=True)
-    # res = p.stdout.read().decode('utf-8', 'ignore')
-    # print(res)
     try:
-        stdout, stderr = p.communicate(timeout=timeout)
-        return stdout.decode('utf-8', 'ignore'), stderr.decode('utf-8', 'ignore')
+        if stream_flag:
+            full_res = ''
+            while True:
+                output = p.stdout.readline()
+                if output.strip() == '[DONE]' and p.poll() is not None:
+                    break
+                if output.strip():
+                    response = output.decode('utf-8', 'ignore')
+                    response = response[6:] if response.startswith('data:') else response
+                    res_json = json.loads(response)
+                    if res_json['choices'][0]['finish_reason'] == 'stop':
+                        break
+                    single_line_res = res_json['choices'][0]['delta']['content']
+                    print(single_line_res, end='')
+                    full_res += single_line_res
+            print()
+        else:
+            full_res, _ = p.communicate(timeout=timeout)
+            full_res = full_res.decode('utf-8', 'ignore')
+        return full_res
     except subprocess.TimeoutExpired as timeout_e:
         p.terminate()
         if os.name == 'nt':
@@ -37,7 +52,7 @@ def run_command_with_timeout(command: str, timeout: int) -> Tuple[str, str]:
         else:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
         raise subprocess.TimeoutExpired(
-            p.args, timeout, output=stdout, stderr=stderr) from timeout_e
+            p.args, timeout, output=full_res) from timeout_e
 
 
 def kill_process_tree(pid: int) -> None:
@@ -51,10 +66,10 @@ def kill_process_tree(pid: int) -> None:
         pass
 
 
-def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, image=None) -> str:
+def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, stream_flag=True) -> str:
     # print(f'fetch_code has been called with {openai_key}, {model}, {prompt}, {url_option}, {chat_flag}')
     url, headers, terminal_headers, data = req_info(
-        openai_key, model, prompt, url_option, chat_flag, image)
+        openai_key, model, prompt, url_option, chat_flag, stream_flag=stream_flag)
     if os.name == 'nt':  # Windows
         if check_terminal() == 'powershell':
             wt_command = f'Invoke-WebRequest -Uri "{url}" -Method POST -Headers @{{{terminal_headers[0]};{terminal_headers[1]}}} -Body \'{data}\' -UseBasicParsing | Select-Object -ExpandProperty Content | ConvertFrom-Json | Select-Object -ExpandProperty choices | Select-Object -First 1 | Select-Object -ExpandProperty message | Select-Object -ExpandProperty content'
@@ -72,17 +87,20 @@ def fetch_code(openai_key: str, model: str, prompt: str, url_option: str, chat_f
     # print(command)
 
     try:
-        res, _ = run_command_with_timeout(command, 60)
-        # print(res)
-        # res = os.popen(command).read().encode('utf-8').decode('utf-8', 'ignore')
+        res = run_command_with_timeout(command, 60, stream_flag=stream_flag)
+        # print('res=', res)
+
         if 'dalle' in model.lower() or 'dall-e' in model.lower():
             return json.loads(res)['data'][0]['url']
-        return json.loads(res)['choices'][0]['message']['content']
+        if not stream_flag:
+            return json.loads(res)['choices'][0]['message']['content']
+        else:
+            return res
     except Exception as e:
         return 'Error', e
 
 
-def chat_data_wrapper(model: str, prompt: str, chat_flag: bool, input_image=None) -> str:
+def chat_data_wrapper(model: str, prompt: str, chat_flag: bool, stream_flag: bool) -> str:
     if chat_flag:
         return f'{{"model": "{model}","messages":{prompt}}}'  # 组装数据的部分在函数之外完成
     if 'dalle' in model.lower() or 'dall-e' in model.lower():
@@ -91,10 +109,11 @@ def chat_data_wrapper(model: str, prompt: str, chat_flag: bool, input_image=None
     #     base64_image = encode_image(input_image)
     #     content = f'[{{"type": "text","text": "{prompt}"}},{{"type": "image_url","image_url": {{"url": "data:image/jpeg;base64,{base64_image[-1]}"}}}}]'
     #     return f'{{"model": "{model}","messages": [{{"role": "user", "content": "{content}"}}], "max_tokens": 300}}'
-    return f'{{"model": "{model}","messages": [{{"role": "user", "content": "{prompt}"}}]}}'
+    stream_flag = 'true' if stream_flag else 'false'
+    return f'{{"model": "{model}", "messages": [{{"role": "user", "content": "{prompt}"}}], "stream": {stream_flag}}}'
 
 
-def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, input_image=None) -> Tuple[str, str, str, str]:
+def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_flag: bool, stream_flag: bool) -> Tuple[str, str, str, str]:
     headers = [
         f"Authorization: Bearer {openai_key}",
         "Content-Type: application/json"
@@ -119,7 +138,7 @@ def req_info(openai_key: str, model: str, prompt: str, url_option: str, chat_fla
         else:
             url += "v1/chat/completions"
 
-    data = chat_data_wrapper(model, prompt, chat_flag, input_image)
+    data = chat_data_wrapper(model, prompt, chat_flag, stream_flag=stream_flag)
     return url, headers, terminal_headers, data
 
 
@@ -151,7 +170,7 @@ def single_claude(anthropic_api_key: str, model: str, prompt: str) -> str:
         command = f"curl --request POST --url '{url}' --header '{headers[0]}' --header '{headers[1]}' --header '{headers[2]}' --data '{data}'"
     # print(command)
     try:
-        res, err = run_command_with_timeout(command, 60)
+        res = run_command_with_timeout(command, 60, stream_flag=False)
         return json.loads(res)['completion']
     except Exception as e:
         err = str(e)
@@ -187,7 +206,7 @@ def chat(openai_key: str, model: str, url_option: str):
         if user_input == "exit":
             break
         conversation.append({"role": "user", "content": user_input})
-        response = fetch_code(openai_key, model, json.dumps(conversation), url_option, True)
+        response = fetch_code(openai_key, model, json.dumps(conversation), url_option, chat_flag=True, stream_flag=False)
         print(f'Tax: {response}')
         conversation.append({"role": "assistant", "content": response.encode(
             'unicode-escape').decode('utf8').replace("'", "")})
@@ -198,7 +217,7 @@ def chat(openai_key: str, model: str, url_option: str):
 def parallel_ask(data_prompts, chat_mode, api_key, url, max_workers, output_file, model, **args):
     with concurrent.futures.ThreadPoolExecutor(max_workers=int(max_workers)) as executor:
         if chat_mode == 'openai':
-            future_to_prompt = {executor.submit(fetch_code, **args, openai_key=api_key, url_option=url, prompt=prompt, model=model, chat_flag=False): prompt for prompt in data_prompts}
+            future_to_prompt = {executor.submit(fetch_code, **args, openai_key=api_key, url_option=url, prompt=prompt, model=model, chat_flag=False, stream_flag=False): prompt for prompt in data_prompts}
         results = []
         for future in concurrent.futures.as_completed(future_to_prompt):
             try:
@@ -311,6 +330,8 @@ def main() -> None:
                         help='Only show the code.')
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='Parallel mode. If specified, the input file will be read line by line and the responses will be saved to the output file.')
+    parser.add_argument('--not_stream', action='store_true',
+                        help='The response is streamed by default. If specified, the response will not be streamed.')
     # parser.add_argument('--plugin', type=str, choices=['git_commit'],
     #                     help='Plugins with the third-party software or API.')
     parser.add_argument('--option', metavar='KEY=VALUE', action='append', help='Custom option')
@@ -367,7 +388,11 @@ def main() -> None:
         print(res)
         return
 
-    res = fetch_code(key, args.model, prompt, url, False, None)
+    # stream is only supported by OpenAI gpt-* models
+    stream_flag = True if args.model.startswith('gpt') else False
+    stream_flag = False if args.not_stream else stream_flag
+
+    res = fetch_code(key, args.model, prompt, url, chat_flag=False, stream_flag=stream_flag)
 
     if args.output:
         with open(args.output, 'w', encoding='utf-8') as f:
@@ -387,7 +412,8 @@ def main() -> None:
                 if answer in ['y', 'Y', 'yes', 'Yes', 'YES']:
                     os.system(first_code)
     else:
-        print(res)
+        if not stream_flag:
+            print(res)
 
 
 if __name__ == '__main__':
