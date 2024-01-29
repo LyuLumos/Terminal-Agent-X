@@ -45,7 +45,8 @@ $ tax write a python code for fibonacci
 | OpenAI GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate content. |
 | OpenAI DALL·E 3 | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
 | OpenAI GPT-4 Vision Preview | `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
-| Anthropic Claude | `tax <prompt> -m claude` | Use Claude to generate code. Use `-k your_claude_key` if you have set openai key in the environment variable. |
+| Anthropic Claude | `tax <prompt> -m claude` | Use Claude to generate content. Use `-k your_claude_key` if you have set openai key in the environment variable. Only support single chat now. |
+| Google Gemini |  `tax <prompt> -m gemini-pro` | Use Gemini to generate content. Also support `-k google_api_key`. Only support single chat now. |
 
 
 | Mode | Command | Description |

@@ -282,6 +282,7 @@ def process_image(api_key, url, prompt, image_path, model):
     return ans
 
 
+# TODO: openai requests will gradually be migrated to this.
 def https_chat_openai_request(url, api_key, model, prompt):
     url = url.replace('https://', '')
     url = url[:-1] if url[-1] == '/' else url
@@ -305,6 +306,32 @@ def https_chat_openai_request(url, api_key, model, prompt):
     conn.request("POST", "/v1/chat/completions", payload, headers)
     data = conn.getresponse().read()
     ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
+    return ans
+
+
+def https_gemini_request(api_key, model, prompt):
+    url = 'generativelanguage.googleapis.com'
+    # https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:GenerateContent?key=${API_KEY} \
+
+    conn = http.client.HTTPSConnection(url)
+    headers = {
+      'Content-Type': 'application/json'
+    }
+    payload = json.dumps({
+        "contents": [
+            {
+                "role": "user",
+                "parts": [
+                    {
+                        "text": f'{prompt}'
+                    }
+                ]
+            }
+        ]
+    })
+    conn.request("POST", f"{url}/v1/models/{model}:generateContent?key={api_key}", payload, headers)
+    data = conn.getresponse().read()
+    ans = json.loads(data.decode("utf-8"))['candidates'][0]['content']['parts'][0]['text']
     return ans
 
 
@@ -371,6 +398,10 @@ def main() -> None:
 
     if args.model.lower() == 'claude' or url == 'claude':
         res = single_claude(key, 'claude-1', prompt)
+        print(res)
+        return
+    elif 'gemini-pro' in args.model.lower():
+        res = https_gemini_request(key, args.model, prompt)
         print(res)
         return
 
