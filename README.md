@@ -135,4 +135,10 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Refactor: Change the name of environment variable from `openai_key` to `tax_key`. And some options are also changed. Please check the help message for more details.
 - Fix: Fix the bug of `--code` option when generating code to file.
 
+### 0.1.10
+
+- Feat: Add support for Google Gemini Pro for single chat.
+- Feat: Add support for Google Gemini Pro Vision (Beta feature).
+- Feat: Add support for stream mode of OpenAI.
+
 </details>

@@ -8,6 +8,7 @@ build/
 **/__pycache__
 info.sh
 tests/test.py
+tests/debug/*
 claude.sh
 *.txt
 debug/
