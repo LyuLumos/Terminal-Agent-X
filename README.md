@@ -7,7 +7,7 @@
 - 👻 Easy installation and usage with a single command.
 - 🎈 Small size, no additional dependencies required.
 - 🐼 Supports English and Chinese on Windows CMD, Powershell, Linux shell, etc.
-- 🤖 Compatible with OpenAI GPT-3.5/4s, DALL·E, and Claude API in OpenAI, Anthropic or the third-party.
+- 🤖 Compatible with GPT-3.5/4, DALL·E, Claude and Gemini APIs or the third parties.
 
 
 ## Install
@@ -25,7 +25,7 @@ export tax_key=sk-xxx
 export tax_base_url=YOUR_BASE_URL # optional, default: https://api.openai.com
 ```
 
-Get your OpenAI key from [OpenAI](https://platform.openai.com/account/api-keys) or Claude API key from [Anthropic](https://www.anthropic.com/claude/) and set it as `tax_key`.
+Get your key from [OpenAI](https://platform.openai.com/account/api-keys) or Claude API key from [Anthropic](https://www.anthropic.com/claude/) and set it as `tax_key`.
 
 
 ## Get Started
@@ -40,13 +40,14 @@ $ tax write a python code for fibonacci
 
 | Model | Command | Description |
 | :--- | :--- | :--- |
-| OpenAI ChatGPT | `tax <prompt>` | Use `gpt-3.5-turbo` to generate content. |
-| OpenAI ChatGPT | `tax <prompt> --code` | Use `gpt-3.5-turbo` to generate code. If only one line is generated, it will be executed automatically with your permission. |
-| OpenAI GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate content. |
-| OpenAI DALL·E 3 | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
-| OpenAI GPT-4 Vision Preview | `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
-| Anthropic Claude | `tax <prompt> -m claude` | Use Claude to generate content. Use `-k your_claude_key` if you have set openai key in the environment variable. Only support single chat now. |
-| Google Gemini |  `tax <prompt> -m gemini-pro` | Use Gemini to generate content. Also support `-k google_api_key`. Only support single chat now. |
+| ChatGPT | `tax <prompt>` | Use `gpt-3.5-turbo` to generate content. |
+| ChatGPT | `tax <prompt> --code` | Use `gpt-3.5-turbo` to generate code. If only one line is generated, it will be executed automatically with your permission. |
+| GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate content. |
+| GPT-4 (Vision)| `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
+| DALL·E 3 | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
+| Claude | `tax <prompt> -m claude` | Use Claude to generate content. Use `-k your_claude_key` if you have set key in the environment variable. Only support single chat now. |
+| Gemini Pro |  `tax <prompt> -m gemini-pro` | Use Gemini to generate content. Also support `-k google_api_key`. Only support single chat now. |
+| Gemini Pro (Vision) | `tax -i image_path -m gemini-pro-vision <prompt>` | Upload an image and use Gemini Vision to chat. Also support `-k google_api_key`. |
 
 
 | Mode | Command | Description |
@@ -103,7 +104,7 @@ Please execute it or not at your own discretion. I am not responsible for the co
 #### 0.1.4
 
 - Feat: Add support for reading prompt from file.
-- Feat: Add support for OpenAI DALL·E.
+- Feat: Add support for DALL·E.
 - Fix: Resolve the bug of curl command on Windows platform using IPv6 address to access Claude.
 
 #### 0.1.5
@@ -117,11 +118,11 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 #### 0.1.7
 
-- Feat: Add support for parallel processing with openai mode.
+- Feat: Add support for parallel processing with mode.
 
 #### 0.1.8
 
-- Feat: Add support for OpenAI `gpt-4-vision-preview` model on all platforms (Beta feature). For example,
+- Feat: Add support for `gpt-4-vision-preview` model on all platforms (Beta feature). For example,
     ```bash
     $ tax -i logo.jpg -m gpt-4-vision-preview what is this?
     This appears to be a logo or emblem for something called "Most Creative Learning." The design features a stylized triangular shape, possibly an optical illusion known as a Penrose triangle, ...
@@ -130,7 +131,7 @@ Please execute it or not at your own discretion. I am not responsible for the co
 
 #### 0.1.9
 
-- Feat: Update OpenAI DALL·E to `dall-e-3` model.
+- Feat: Update DALL·E to `dall-e-3` model.
 - Refactor: Change the name of environment variable from `openai_key` to `tax_key`. And some options are also changed. Please check the help message for more details.
 - Fix: Fix the bug of `--code` option when generating code to file.
 

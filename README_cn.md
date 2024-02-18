@@ -7,7 +7,7 @@
 - 👻 一键安装运行
 - 🎈 体积极小，不需要任何依赖
 - 🐼 支持中英文，能够运行在Windows和Linux多类型终端上
-- 🤖 兼容OpenAI GPT-3.5/4s、DALL·E、 Claude API以及各种第三方API
+- 🤖 兼容GPT-3.5/4s、DALL·E、 Claude API以及各种第三方API
 
 ## 安装
 
@@ -42,12 +42,14 @@ tax 用Python写一个计算斐波那契数列的程序
 
 | 模型 | 命令 | 描述 |
 | :--- | :--- | :--- |
-| OpenAI ChatGPT | `tax <提示>` | 使用 `gpt-3.5-turbo` 生成内容。 |
-| OpenAI ChatGPT | `tax <提示> --code` | 使用 `gpt-3.5-turbo` 生成代码。如果只生成1行代码，将在您的许可下自动执行。 |
-| OpenAI GPT-4 | `tax <提示> -m gpt-4` | 使用 GPT-4 生成内容。 |
-| OpenAI DALL·E 3 | `tax <提示> -m dalle` | 使用 DALL·E 3 生成图像。目前一次只能生成一张 `1024x1024` 的图像。 |
-| OpenAI GPT-4 Vision Preview | `tax -i <图片路径> -m gpt-4-vision-preview <提示>` | 上传一张图片并使用 GPT-4 Vision Preview 进行对话。 |
-| Anthropic Claude | `tax <提示> -m claude` | 使用 Claude 生成代码。如果已在环境变量中设置了 OpenAI 密钥，则使用 `-k your_claude_key`。 |
+| ChatGPT | `tax <提示>` | 使用 `gpt-3.5-turbo` 生成内容。 |
+| ChatGPT | `tax <提示> --code` | 使用 `gpt-3.5-turbo` 生成代码。如果只生成1行代码，将在您的许可下自动执行。 |
+| GPT-4 | `tax <提示> -m gpt-4` | 使用 GPT-4 生成内容。 |
+| GPT-4 Vision Preview | `tax -i <图片路径> -m gpt-4-vision-preview <提示>` | 上传一张图片并使用 GPT-4 Vision Preview 进行对话。 |
+| DALL·E 3 | `tax <提示> -m dalle` | 使用 DALL·E 3 生成图像。目前一次只能生成一张 `1024x1024` 的图像。 |
+| Claude | `tax <提示> -m claude` | 使用 Claude 生成代码。如果已在环境变量中设置了 密钥，则使用 `-k your_claude_key`。 |
+| Gemini Pro |  `tax <提示> -m gemini-pro` | 使用 Gemini Pro 生成内容。支持 `-k google_api_key`。目前只支持单次对话。 |
+| Gemini Pro Vision | `tax -i <图片路径> -m gemini-pro-vision <提示>` | 上传一张图片并使用 Gemini Vision 进行对话。支持 `-k google_api_key`。 |
 
 
 | 模式 | 命令 | 描述 |

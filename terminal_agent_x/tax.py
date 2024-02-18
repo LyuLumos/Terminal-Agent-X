@@ -171,6 +171,7 @@ def single_claude(anthropic_api_key: str, model: str, prompt: str) -> str:
     # print(command)
     try:
         res = run_command_with_timeout(command, 60, stream_flag=False)
+        # print(res)
         return json.loads(res)['completion']
     except Exception as e:
         err = str(e)
@@ -238,47 +239,83 @@ def load_prompts_file(path: str) -> str:
 
 
 def process_image(api_key, url, prompt, image_path, model):
-    # print(url)
     url = url.replace('https://', '')
+    GOOGLE_ENDPOINT = 'generativelanguage.googleapis.com'
+    if 'gemini' in model:
+        url = GOOGLE_ENDPOINT
     conn = http.client.HTTPSConnection(url)
 
     def encode_image(image_path):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode('utf-8')
 
-    payload = json.dumps({
-        "model": f'{model}',
-        "stream": False,
-        "messages": [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": f'{prompt}'
-                },
-               {
-                  "type": "image_url",
-                  "image_url": {
-                     "url": f'data:image/jpeg;base64,{encode_image(image_path)}'
-                  }
-               }
-            ]
-         }
-      ],
-      "max_tokens": 400
-    })
-    headers = {
-      'Accept': 'application/json',
-      'Authorization': f'Bearer {api_key}',
-      'Content-Type': 'application/json'
-    }
+    def openai_gpt4_v(api_key, prompt, image_path, model, conn, encode_image):
+        payload = json.dumps({
+            "model": f'{model}',
+            "stream": False,
+            "messages": [
+            {        
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": f'{prompt}'
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f'data:image/jpeg;base64,{encode_image(image_path)}'
+                        }
+                    }
+                ]
+            }],
+            "max_tokens": 400
+        })
+        headers = {
+            'Accept': 'application/json',
+            'Authorization': f'Bearer {api_key}',
+            'Content-Type': 'application/json'
+        }
+        
+        conn.request("POST", "/v1/chat/completions", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        # print(data.decode("utf-8"))
+        ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
+        return ans
     
-    conn.request("POST", "/v1/chat/completions", payload, headers)
-    res = conn.getresponse()
-    data = res.read()
-    # print(data.decode("utf-8"))
-    ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
+    def google_gemini_v(api_key, prompt, image_path, model, conn, encode_image):
+        payload = json.dumps({
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": f'{prompt}'
+                        },
+                        {
+                            "inline_data": {
+                                "mime_type": "image/jpeg",
+                                "data": f'{encode_image(image_path)}'
+                            }
+                        }
+                    ]
+                }
+            ]
+        })
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        conn.request("POST", f"/v1beta/models/{model}:generateContent?key={api_key}", payload, headers)
+        res = conn.getresponse()
+        data = res.read()
+        ans = json.loads(data.decode("utf-8"))['candidates'][0]['content']['parts'][0]['text']
+        return ans
+
+    if 'gpt' in model:
+        ans = openai_gpt4_v(api_key, prompt, image_path, model, conn, encode_image)
+    elif 'gemini' in model:
+        ans = google_gemini_v(api_key, prompt, image_path, model, conn, encode_image)
+
     return ans
 
 
@@ -311,7 +348,6 @@ def https_chat_openai_request(url, api_key, model, prompt):
 
 def https_gemini_request(api_key, model, prompt):
     url = 'generativelanguage.googleapis.com'
-    # https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:GenerateContent?key=${API_KEY} \
 
     conn = http.client.HTTPSConnection(url)
     headers = {
@@ -342,9 +378,9 @@ def main() -> None:
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('-m', '--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4s, Claude API or DALLE.')
+                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4, Claude, Gemini or DALLE series.')
     parser.add_argument('-i', '--input_image', type=str,
-                        help='Input image for OpenAI GPT-4-vision [Beta Feature].')
+                        help='Input image for OpenAI GPT-4-vision and Google Gemini Pro Vision [Beta Feature].')
     parser.add_argument('--prompt_file', type=str,
                         help='Input file. If specified, the prompt will be read from the file.')
     parser.add_argument('-o', '--output', type=str,
@@ -358,7 +394,7 @@ def main() -> None:
     parser.add_argument('-p', '--parallel', action='store_true',
                         help='Parallel mode. If specified, the input file will be read line by line and the responses will be saved to the output file.')
     parser.add_argument('--not_stream', action='store_true',
-                        help='The response is streamed by default. If specified, the response will not be streamed.')
+                        help='The text response is streamed by default. If specified, the response will not be streamed.')
     # parser.add_argument('--plugin', type=str, choices=['git_commit'],
     #                     help='Plugins with the third-party software or API.')
     parser.add_argument('--option', metavar='KEY=VALUE', action='append', help='Custom option')
@@ -376,7 +412,6 @@ def main() -> None:
         url = 'https://api.openai.com'
 
     url = url[:-1] if url[-1] == '/' else url
-
 
     # input_args = sys.stdin.readlines()
     # prompt = f'{prompt}\\n{repr("".join(input_args))}' if input_args else prompt
@@ -400,7 +435,7 @@ def main() -> None:
         res = single_claude(key, 'claude-1', prompt)
         print(res)
         return
-    elif 'gemini-pro' in args.model.lower():
+    elif 'gemini-pro' == args.model.lower():
         res = https_gemini_request(key, args.model, prompt)
         print(res)
         return
