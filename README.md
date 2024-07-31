@@ -42,8 +42,8 @@ $ tax write a python code for fibonacci
 | :--- | :--- | :--- |
 | ChatGPT | `tax <prompt>` | Use `gpt-3.5-turbo` to generate content. |
 | ChatGPT | `tax <prompt> --code` | Use `gpt-3.5-turbo` to generate code. If only one line is generated, it will be executed automatically with your permission. |
-| GPT-4 | `tax <prompt> -m gpt-4` | Use GPT-4 to generate content. |
-| GPT-4 (Vision)| `tax -i image_path -m gpt-4-vision-preview <prompt>` | Upload an image and use GPT-4 Vision Preview to chat. |
+| GPT-4o-mini | `tax <prompt> -m gpt-4o-mini` | Use GPT-4o-mini to generate content. |
+| GPT-4o | `tax -i image_path -m gpt-4o <prompt>` | Upload an image and use GPT-4o to chat. |
 | DALL·E 3 | `tax <prompt> -m dalle` | Use DALL·E 3 to generate image. Currently, only one `1024x1024` image can be generated at a time. |
 | Claude | `tax <prompt> -m claude` | Use Claude to generate content. Use `-k your_claude_key` if you have set key in the environment variable. Only support single chat now. |
 | Gemini Pro |  `tax <prompt> -m gemini-pro` | Use Gemini to generate content. Also support `-k google_api_key`. Only support single chat now. |
@@ -52,7 +52,7 @@ $ tax write a python code for fibonacci
 
 | Mode | Command | Description |
 | :--- | :--- | :--- |
-| Chat with `gpt-3.5-turbo` | `tax -m gpt-3.5-turbo -c` |  Chat with `gpt-3.5-turbo`. |
+| Chat with selected model | `tax -m model_name -c` |  Chat with the selected model. |
 | Use a third-party base url and key | `tax <prompt> -u <base_url> -k <key>`| The url and key will be use before the environment variable. |
 | Save result to file | `tax <prompt> -o <output_file>` | Save response to a file. |
 | Read prompts from file| `tax --prompt_file <prompt_file>` | Read prompt from file, one prompt per line. Please ensure tht you have enough quota. |
@@ -140,5 +140,9 @@ Please execute it or not at your own discretion. I am not responsible for the co
 - Feat: Add support for Google Gemini Pro for single chat.
 - Feat: Add support for Google Gemini Pro Vision (Beta feature).
 - Feat: Add support for stream mode of OpenAI.
+
+### 0.1.11
+
+- Feat: Add support for Anthropic Claude 3 Opus/Sonnet(Vision) API.
 
 </details>

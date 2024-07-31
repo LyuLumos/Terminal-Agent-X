@@ -378,7 +378,7 @@ def main() -> None:
     parser.add_argument('-k', '--key', type=str,
                         help='Your key for OpenAI/Claude.')
     parser.add_argument('-m', '--model', type=str,
-                        default='gpt-3.5-turbo', help='Model name. Choose from gpt-3.5/4, Claude, Gemini or DALLE series.')
+                        default='gpt-4o-mini', help='Model name. Choose from gpt-3.5/4, Claude, Gemini or DALLE series.')
     parser.add_argument('-i', '--input_image', type=str,
                         help='Input image for OpenAI GPT-4-vision and Google Gemini Pro Vision [Beta Feature].')
     parser.add_argument('--prompt_file', type=str,
