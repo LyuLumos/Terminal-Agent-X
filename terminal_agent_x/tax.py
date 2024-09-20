@@ -353,7 +353,7 @@ def https_gemini_request(api_key, model, prompt):
 
     conn = http.client.HTTPSConnection(url)
     headers = {
-      'Content-Type': 'application/json'
+        'Content-Type': 'application/json'
     }
     payload = json.dumps({
         "contents": [

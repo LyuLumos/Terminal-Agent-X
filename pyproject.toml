@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "terminal-agent-x"
-version = "0.1.10"
+version = "0.1.11"
 authors = [
   { name="LyuLumos", email="lyujiuyang0@gmail.com" },
 ]
@@ -14,7 +14,6 @@ readme = "README.md"
 requires-python = ">=3.6"
 classifiers = [
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
