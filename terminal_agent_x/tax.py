@@ -323,23 +323,25 @@ def process_image(api_key, url, prompt, image_path, model):
 def https_chat_openai_request(url, api_key, model, prompt):
     url = url.replace('https://', '')
     url = url[:-1] if url[-1] == '/' else url
-    conn = http.client.HTTPSConnection(url)
+    conn = http.client.HTTPSConnection(url, timeout=240)
     headers = {
       'Accept': 'application/json',
       'Authorization': f'Bearer {api_key}',
       'Content-Type': 'application/json'
     }
-    payload = json.dumps({
+    payload = {
         "model": f'{model}',
         "stream": False,
         "messages": [
-        {
-            "role": "user",
-            "content": f'{prompt}'
-        }
-      ],
-      "max_tokens": 1024
-    })
+            {
+                "role": "user",
+                "content": f'{prompt}'
+            }
+        ]
+    }
+    if not model.startswith('o1'):
+        payload["max_tokens"] = 1024
+    payload = json.dumps(payload)
     conn.request("POST", "/v1/chat/completions", payload, headers)
     data = conn.getresponse().read()
     ans = json.loads(data.decode("utf-8"))['choices'][0]['message']['content']
@@ -437,6 +439,10 @@ def main() -> None:
         return
     elif 'gemini-pro' == args.model.lower():
         res = https_gemini_request(key, args.model, prompt)
+        print(res)
+        return
+    elif args.model.startswith('o1'):
+        res = https_chat_openai_request(url, key, args.model, prompt)
         print(res)
         return
 
